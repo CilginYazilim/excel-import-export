@@ -1,0 +1,309 @@
+/* ==================================================================
+ *  SAYFAYA ÖZEL STİLLER
+ *  cilginyazilim.com – PHP Excel Dışa/İçe Aktarma
+ * ------------------------------------------------------------------
+ *  DİKKAT: Genel marka stilleri "cilginyazilim.css" dosyasındadır.
+ *  Bu dosya SADECE bu sayfaya özgü küçük eklemeleri içerir.
+ *  Böylece tasarım kalıbını başka projeye taşırken bu dosyayı
+ *  götürmeniz gerekmez.
+ *
+ *  Yükleme sırası:
+ *    bootstrap.min.css  →  cilginyazilim.css  →  style.css
+ * ================================================================== */
+
+/* Sayfa genişliği: 1200px üstünde tablo çok yayılmasın. */
+.container { max-width: 1180px; }
+
+
+/* ==================================================================
+ *  GİZLİ YERLEŞİM HATASI DÜZELTMESİ: form-sarmalı modal genişliği
+ * ------------------------------------------------------------------
+ *  "Yeni Kayıt / Düzenle" modalında (userModal) .modal-content bir
+ *  <form> içine sarılıdır: .modal-dialog > form > .modal-content.
+ *
+ *  SORUN: ".modal-dialog-centered" modal-dialog'u FLEX KONTEYNER
+ *  yapar. Bu konteynerin doğrudan çocuğu artık .modal-content
+ *  DEĞİL, aradaki <form>'dur — ve <form>'un flex-grow'u yoktur.
+ *  Grow'suz bir flex öğesi konteynerin genişliğini DOLDURMAZ,
+ *  kendi içeriğine göre BÜZÜLÜR. Sonuç: modal-lg 800px istese bile
+ *  form daha dara küçülür ve modal-content onu izler.
+ *
+ *  ÇÖZÜM: <form>'a width:100% vermek — Bootstrap'in kendi
+ *  .modal-content{width:100%} kuralının, form arada olmadığında
+ *  normalde yaptığı işi üstlenir.
+ * ================================================================== */
+.cy-modal .modal-dialog > form {
+    width: 100%;
+}
+
+/* --- Modal içindeki görsel önizleme --------------------------- */
+#image_preview {
+    max-height: 150px;
+    border-radius: var(--cy-radius);
+    object-fit: cover;
+    border: 1px solid var(--cy-border);
+}
+
+/* --- Detay modalındaki büyük profil görseli ------------------- */
+#detail_image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: var(--cy-radius);
+    border: 1px solid var(--cy-border);
+}
+
+/* --- Sürükleyerek yükleme alanı görünümü --------------------- */
+.upload-box {
+    border: 2px dashed var(--cy-border);
+    border-radius: var(--cy-radius);
+    padding: 1rem;
+    transition: border-color .18s ease, background-color .18s ease;
+}
+
+.upload-box:hover {
+    border-color: var(--cy-brand-400);
+    background-color: var(--cy-brand-100);
+}
+
+/* --- Silme onay modalındaki uyarı ikonu ---------------------- */
+.delete-icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, .12);
+    color: var(--cy-danger);
+    font-size: 1.8rem;
+}
+
+/* --- Tablo sütun genişlikleri -------------------------------- */
+#user_data th:first-child { width: 70px; }
+#user_data th:nth-child(2) { width: 80px; }
+#user_data th:last-child { width: 140px; }
+
+
+/* ==================================================================
+ *  TABLO ARAÇ ÇUBUĞU
+ * ------------------------------------------------------------------
+ *  Arama kutusu + Excel butonları AYNI SATIRDA: ikisi de tabloda
+ *  GÖRÜNEN veriyle ilgilidir — dışa aktarma, arama kutusundaki
+ *  filtreyi kullanır.
+ *
+ *  flex-wrap KAPALI: satırın bölünmesini istemiyoruz. Ekran dar
+ *  gelirse araç çubuğu kendi içinde YATAY KAYAR (overflow-x); sayfa
+ *  düzeni bozulmaz, kullanıcı parmağıyla/fareyle kaydırıp butonlara
+ *  ulaşabilir.
+ * ================================================================== */
+.cy-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    padding-bottom: .15rem;
+}
+
+.cy-toolbar__search {
+    flex: 1 1 220px;
+    min-width: 160px;
+    max-width: 360px;
+}
+
+.cy-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-shrink: 0;
+}
+
+/* --- Küçük buton varyantı ---
+ * Bootstrap'in .btn-sm sınıfı marka kalıbındaki dolgu/gölge
+ * ayarlarını ezmediği için kendi küçük ölçümüzü tanımlıyoruz. */
+.cy-btn--sm {
+    padding: .38rem .8rem;
+    font-size: .82rem;
+    white-space: nowrap;
+}
+
+/* --- Kenarlıklı (outline) buton ---
+ * Marka kalıbında bu varyant yok; sayfaya özgü eklendi. Beyaz
+ * kart zemininde görünür ama göze batmayan, ikincil eylemler için
+ * (örnek indir, dışa aktar). */
+.cy-btn--outline {
+    background: transparent;
+    border: 1px solid var(--cy-border);
+    color: var(--cy-text-muted);
+}
+
+.cy-btn--outline:hover,
+.cy-btn--outline:focus-visible {
+    background: var(--cy-brand-100);
+    border-color: var(--cy-brand-400);
+    color: var(--cy-brand-600);
+}
+
+
+/* ==================================================================
+ *  ALT ÇUBUK: uzunluk seçici + bilgi metni + sayfalama
+ * ------------------------------------------------------------------
+ *  Üçü de DataTables'ın "dom" seçeneğiyle TEK bir <div class="cy-bottom-bar">
+ *  içine, üç alt <div> olarak çizilir (bkz. index.php). Burada
+ *  yalnızca bu üç alt parçayı tek satırda, aralarında boşlukla
+ *  hizalıyoruz.
+ * ================================================================== */
+.cy-bottom-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem .5rem;
+    margin-top: 1rem;
+    padding-top: .85rem;
+    border-top: 1px solid var(--cy-border);
+    font-size: .85rem;
+    color: var(--cy-text-muted);
+}
+
+/* Sırayla: uzunluk seçici solda, bilgi metni ortada, sayfalama sağda.
+ * Dar ekranda satır bölünürse bile bu sıra korunur (order kullanmaya
+ * gerek yok; DOM sırası zaten budur). */
+.cy-bottom-bar__length,
+.cy-bottom-bar__info,
+.cy-bottom-bar__pagination {
+    display: flex;
+    align-items: center;
+}
+
+/*
+ * DataTables'ın ürettiği asıl öğe şudur:
+ *   <label>Sayfada <select class="form-select form-select-sm">…</select> kayıt göster</label>
+ *
+ * SORUN: Bootstrap'in .form-select sınıfı "display:block; width:100%"
+ * tanımlar. <select> normalde satır içi (inline) davranırdı; ama
+ * "block" olunca ÖNCESİNDE ve SONRASINDA zorunlu satır sonu oluşur.
+ * Sonuç: "Sayfada" bir satırda, tam genişlikte <select> ikinci
+ * satırda, "kayıt göster" üçüncü satırda görünür.
+ *
+ * ÇÖZÜM İKİ PARÇALI:
+ *   1. label'ı flex yapmak — flex konteynerde metin parçaları da
+ *      (anonim flex öğesi olarak) satıra dizilir, "block" öğeler bile
+ *      artık satırı bölmez.
+ *   2. select'in width:100% mirasını ezip auto genişlik vermek.
+ */
+.cy-bottom-bar__length .dataTables_length label {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.cy-bottom-bar__length .dataTables_length select {
+    width: auto;
+}
+
+.cy-bottom-bar__info .dataTables_info {
+    padding: 0;
+    white-space: nowrap;
+}
+
+.cy-bottom-bar__pagination .dataTables_paginate {
+    margin: 0 !important;
+}
+
+/* Çok dar ekranda üç parça alt alta düşerse ortalansın; kenara
+ * yaslı kalmaları anlamsız görünürdü. */
+@media (max-width: 575.98px) {
+    .cy-bottom-bar {
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+
+/* ==================================================================
+ *  İÇE AKTARMA ÖNİZLEMESİ
+ * ------------------------------------------------------------------
+ *  Önizleme tablosunun tek işi vardır: kullanıcı "Kaydet"e basmadan
+ *  ÖNCE neyin değişeceğini görsün. Bu yüzden hatalı satırlar sadece
+ *  kırmızı yazıyla değil, ZEMİN RENGİYLE de ayrılır; uzun bir listede
+ *  göz önce rengi yakalar, sonra metni okur.
+ * ================================================================== */
+
+/* Uzun listelerde modal ekrandan taşmasın; tablo kendi içinde kaysın
+ * ve başlık satırı üstte sabit kalsın. */
+.cy-preview-wrapper {
+    max-height: 55vh;
+    overflow: auto;
+    border: 1px solid var(--cy-border);
+    border-radius: var(--cy-radius);
+}
+
+.cy-preview-table {
+    font-size: .85rem;
+    margin-bottom: 0;
+}
+
+/* position: sticky → Aşağı kaydırırken başlıklar ekranda kalır.
+ * z-index olmazsa hücreler başlığın üzerine biner. */
+.cy-preview-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--cy-surface-soft);
+    white-space: nowrap;
+}
+
+.cy-preview-table td {
+    vertical-align: top;
+}
+
+/* --- Hatalı satır ve hücre --------------------------------------
+ * Renk TEK BAŞINA yeterli bir işaret değildir (renk körlüğü, siyah
+ * beyaz çıktı). Bu yüzden hücrenin altına hata metni de yazılır ve
+ * title özniteliğiyle ipucu balonu eklenir. */
+.cy-row-error > td {
+    background-color: rgba(220, 38, 38, .06);
+}
+
+.cy-cell-error {
+    color: var(--cy-danger);
+    font-weight: 600;
+}
+
+.cy-cell-error__text {
+    display: block;
+    margin-top: .15rem;
+    font-size: .72rem;
+    font-weight: 400;
+    line-height: 1.25;
+    color: var(--cy-danger);
+}
+
+/* --- Sihirbazın "nasıl çalışır" kutusu ------------------------- */
+.cy-import-help {
+    padding: 1rem 1.1rem;
+    border-radius: var(--cy-radius);
+    background: var(--cy-surface-soft);
+    border: 1px solid var(--cy-border);
+    font-size: .9rem;
+}
+
+.cy-import-help ol {
+    margin-bottom: 0;
+}
+
+.cy-import-help li + li {
+    margin-top: .3rem;
+}
+
+/* --- Önizleme özet rozetleri ---------------------------------- */
+#import_summary .badge {
+    font-size: .8rem;
+    padding: .45em .7em;
+}

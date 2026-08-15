@@ -1,0 +1,45 @@
+# =====================================================================
+#  .gitignore – Git'in TAKİP ETMEYECEĞİ dosyalar
+# ---------------------------------------------------------------------
+#  KULLANICI YÜKLEMELERİ REPOYA GİRMEZ.
+#
+#  Klasörün kendisi repoda DURMALIDIR (yoksa ilk yüklemede
+#  "upload klasörü yok" hatası alırsınız), ama içindeki görseller
+#  DURMAMALIDIR. Bunu sağlamanın yolu: her şeyi yok say, sonra
+#  .htaccess'i istisna tut. Git boş klasörleri takip edemediği için
+#  klasörü ayakta tutan şey zaten o .htaccess dosyasıdır.
+#
+#  NEDEN ÖRNEK GÖRSEL YOK?
+#  Bir zamanlar depoda 4 adet örnek PNG ve onlara işaret eden örnek
+#  veriler vardı. Sorun şuydu: görselleri silen ya da kendi
+#  veritabanını kuran herkeste "veritabanı dosyayı gösteriyor ama
+#  disk boş" tutarsızlığı çıkıyordu. Artık örnek veride görsel alanı
+#  boştur (bkz. cy_excel.sql) ve uygulama bu durumda baş harf rozeti
+#  gösterir; disk ile veritabanı her kurulumda tutarlıdır.
+# =====================================================================
+
+# --- Kullanıcıların yüklediği görseller ------------------------------
+upload/*
+!upload/.htaccess
+
+# --- Yerel ortam ayarları (şifre içerebilir, ASLA paylaşmayın) -------
+.env
+system/config.local.php
+
+# --- Editör ve işletim sistemi artıkları ----------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# --- Log ve geçici dosyalar -----------------------------------------
+*.log
+*.tmp
+*.bak
+
+# --- Bağımlılık klasörleri (bu projede kullanılmıyor) ---------------
+/vendor/
+/node_modules/

@@ -1,0 +1,21 @@
+# =====================================================================
+#  PARÇA ŞABLONLAR DOĞRUDAN ÇAĞRILAMAZ
+#  cilginyazilim.com – PHP Excel Dışa/İçe Aktarma
+# ---------------------------------------------------------------------
+#  Bu klasördeki dosyalar tek başına çalışmak üzere yazılmamıştır;
+#  index.php onları include eder ve gereken değişkenleri sağlar.
+#
+#  ÖLÇÜLEN SORUN: Doğrudan çağrıldıklarında PHP "Undefined variable"
+#  uyarısı basıyor ve uyarı metninde sunucunun TAM DOSYA YOLU
+#  (C:\xampp\htdocs\...) görünüyordu. Bu bilgi saldırgana kurulum
+#  düzenini verir.
+#
+#  Not: system/ klasörünün tamamını kapatamayız; ajax.php ve
+#  export.php tarayıcıdan çağrılan gerçek uç noktalardır. Bu yüzden
+#  koruma yalnızca views/ klasörüne konur.
+#
+#  İkinci katman: dosyaların kendi içindeki CY_APP kontrolü. Bu
+#  .htaccess'in desteklenmediği bir sunucuda (nginx gibi) o kontrol
+#  çalışmaya devam eder.
+# =====================================================================
+Require all denied

@@ -1,0 +1,103 @@
+# =====================================================================
+#  YÜKLEME KLASÖRÜ – SON ÇARE SAVUNMA KATMANI
+#  cilginyazilim.com – PHP Excel Dışa/İçe Aktarma
+# ---------------------------------------------------------------------
+#  Bu klasöre dosya yazan tek kod system/function.php içindeki
+#  upload_image()'tır ve orada üç katman zaten var:
+#    1. Dosyanın gerçekten görsel olduğu getimagesize() ile İÇERİKTEN
+#       doğrulanır (uzantıya bakılmaz),
+#    2. Yeni dosya adı VE uzantısı bizim beyaz listemizden gelir
+#       (kullanıcının gönderdiği addan değil) — "shell.php.png" gibi
+#       çift uzantılı dosyalar diske o adla hiç yazılamaz,
+#    3. Ad rastgeledir; URL tahmin edilemez.
+#
+#  Buradaki kurallar o üç katmanın HEPSİNİN atlatıldığı varsayımıyla
+#  yazılmıştır. Bir güvenlik katmanının değeri, kendinden öncekilerin
+#  çöktüğü anda ölçülür.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+#  1) SUNUCU TARAFI KOD ÇALIŞTIRMAYI KAPAT
+# ---------------------------------------------------------------------
+#  php_flag yalnızca mod_php ile çalışır. PHP-FPM/CGI ile çalışan
+#  sunucularda bu satır SESSİZCE YOK SAYILIR — bu yüzden aşağıdaki
+#  FilesMatch kuralı tek başına da yeterli olacak şekilde yazıldı.
+#  Tek bir mekanizmaya güvenmiyoruz.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# Yeniden yazma kuralları bu klasörde çalışmasın: üstteki bir
+# .htaccess'in "her isteği index.php'ye yönlendir" kuralı, buradaki
+# statik dosya korumalarını dolanabilirdi.
+<IfModule mod_rewrite.c>
+    RewriteEngine Off
+</IfModule>
+
+# ---------------------------------------------------------------------
+#  2) BETİK UZANTILARINA DOĞRUDAN ERİŞİMİ REDDET
+# ---------------------------------------------------------------------
+#  ÖLÇÜLDÜ: Bu kural olmadan /upload/x.php isteği 200 döndürüp
+#  dosyayı ÇALIŞTIRIYORDU. Kuralla birlikte 403 dönüyor.
+#
+#  Liste neden bu kadar uzun? Sunucu yapılandırmasına göre .phtml,
+#  .phar veya .shtml de yorumlanabilir. Hangi uzantının o sunucuda
+#  aktif olduğunu bilemeyeceğimiz için hepsini birden reddediyoruz.
+<FilesMatch "\.(php|php3|php4|php5|php7|php8|phps|phtml|phar|pl|py|cgi|asp|aspx|jsp|sh|shtml|htaccess|htpasswd)$">
+    Require all denied
+</FilesMatch>
+
+# ---------------------------------------------------------------------
+#  3) DİZİN LİSTELEME VE CGI KAPALI
+# ---------------------------------------------------------------------
+#  -Indexes : index dosyası olmayan klasörde Apache'nin dosya listesi
+#             üretmesini engeller. Dosya adları rastgele olduğu için
+#             tek koruma URL'nin tahmin edilemezliğidir; listeleme açık
+#             kalırsa o koruma tamamen anlamsızlaşır.
+#  -ExecCGI : Bu klasördeki hiçbir şey CGI betiği olarak çalıştırılamaz.
+Options -Indexes -ExecCGI
+
+# ---------------------------------------------------------------------
+#  4) GÜVENLİK BAŞLIKLARI
+# ---------------------------------------------------------------------
+#  ÖLÇÜLEN BOŞLUK: Bu bölüm eklenmeden önce /upload/x.gif isteği
+#  yalnızca "Content-Type: image/gif" döndürüyordu; TEK BİR güvenlik
+#  başlığı yoktu. /upload/x.html ise "Content-Type: text/html" ile
+#  200 dönüyor ve içindeki <script> sitenin KENDİ alan adında
+#  çalışıyordu.
+#
+#  nosniff : Bazı tarayıcılar Content-Type'a rağmen içeriğe bakıp
+#            "bu aslında HTML" diye karar verebilir (MIME sniffing) ve
+#            "görseli" sayfa olarak çalıştırabilir. Bu, sitenin kendi
+#            alan adında JavaScript çalıştırmak demektir (depolanmış
+#            XSS) — oturum çerezleri o betiğe açık hâle gelir.
+#            Bu başlık tarayıcıya "Content-Type ne diyorsa odur,
+#            tahmin etme" der.
+#
+#  CSP     : İkinci kemer. Yanıt her şeye rağmen HTML olarak
+#            yorumlansa bile betik/eklenti çalıştırmayı ve dış kaynak
+#            çağırmayı yasaklar. "sandbox" ise belgeyi kaynaksız
+#            (origin'siz) bir kum havuzuna alır: aynı alan adındaki
+#            çerezlere erişemez, dolayısıyla oturum çalınamaz.
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox"
+
+    # Buradaki hiçbir dosya başka bir siteye çerçeve içinde gömülmesin
+    # (clickjacking ve görsel bazlı oltalama).
+    Header always set X-Frame-Options "DENY"
+
+    # Rastgele dosya adları dış sitelere referans (Referer) olarak
+    # sızmasın; ad sızarsa tahmin edilemezlik korumasi biter.
+    Header always set Referrer-Policy "no-referrer"
+
+    # Tarayıcı bu dosyaları sayfa olarak açmak yerine indirsin.
+    # X-Download-Options eski IE içindir ama zararı yoktur.
+    Header always set X-Download-Options "noopen"
+</IfModule>
