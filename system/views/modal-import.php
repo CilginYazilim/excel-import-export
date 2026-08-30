@@ -36,7 +36,8 @@ foreach ($excelColumns as $column) {
 }
 ?>
 <div class="modal fade cy-modal" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
+    <!-- Önizleme tablosu geniştir; mobilde tam ekran olması şart. -->
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-fullscreen-md-down">
         <div class="modal-content">
 
             <div class="modal-header">

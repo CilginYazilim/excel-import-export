@@ -23,8 +23,15 @@ upload/*
 !upload/.htaccess
 
 # --- Yerel ortam ayarları (şifre içerebilir, ASLA paylaşmayın) -------
+#
+#  config.local.* KALIBI: yalnızca "config.local.php" yazsaydık,
+#  "config.local.php.production" gibi yanına konan bir kopya TAKİPLİ
+#  olur ve canlı sunucu parolası depoya girerdi. Deseni geniş tutup
+#  şablonu tek istisna yapmak, yeni bir kopya oluşturulduğunda da
+#  varsayılanın "gizle" yönünde kalmasını sağlar.
 .env
-system/config.local.php
+system/config.local.*
+!system/config.local.php.example
 
 # --- Editör ve işletim sistemi artıkları ----------------------------
 .vscode/

@@ -1,0 +1,44 @@
+<?php
+/**
+ * ############################################################
+ * #  BU DOSYA BIR SABLONDUR — ICINI DOLDURMAYIN!             #
+ * ############################################################
+ *
+ * Bu dosyanin adi ".example" ile bittigi icin uygulama onu HIC OKUMAZ.
+ * Buraya yazacaginiz veritabani parolasi hicbir ise yaramaz; dahasi bu
+ * dosya depoda takiplidir, yani yazdiginiz parola GitHub'a gonderilir.
+ *
+ * DOGRU KULLANIM — iki adim:
+ *
+ *   1) Bu dosyayi ayni klasore KOPYALAYIN ve kopyanin adini
+ *      ".example" olmadan "config.local.php" yapin:
+ *
+ *          config.local.php.example   ->   config.local.php
+ *
+ *   2) Asagidaki dort satiri KOPYADA doldurun. Bu dosyaya dokunmayin.
+ *
+ * config.local.php .gitignore icindedir: depoya gitmez ve canliya alma
+ * (deploy) islemi onu SILMEZ — bir kez olusturursunuz, kalicidir.
+ *
+ * cPanel'de veritabani ve kullanici adi genellikle hesap adinizla
+ * onekli olur ("hesap_cy_ornek"). MySQL kullanici adlarinda 16 karakter
+ * siniri vardir; cPanel uzun adlari kisaltir, bu yuzden kullanici adi
+ * veritabani adiyla AYNI OLMAYABILIR — cPanel'de gorundugu gibi yazin.
+ */
+
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'cy_excel');
+define('DB_USER', 'veritabani_kullanicisi');
+define('DB_PASS', 'veritabani_parolasi');
+
+/*
+ * CANLI SUNUCUDA HATA GOSTERIMINI KAPATIN.
+ *
+ * Asagidaki satirin basindaki // isaretini KOPYADA kaldirin.
+ * Boylece config.php dosyasina hic dokunmadan canliya alabilirsiniz;
+ * bir sonraki "git pull" ayarinizi geri almaz.
+ *
+ * Acik birakilirsa PHP hata metinleri ekrana basilir ve icinde
+ * veritabani tablo/sutun adlariniz gorunur.
+ */
+// define('APP_DEBUG', false);

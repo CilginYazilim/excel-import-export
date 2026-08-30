@@ -43,10 +43,38 @@ if (session_status() === PHP_SESSION_NONE) {
  *  Aşağıdaki varsayılanlar XAMPP kurulumuna göredir
  *  (kullanıcı: root, şifre: boş).
  * ------------------------------------------------------------------ */
-define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
-define('DB_NAME', getenv('DB_NAME') ?: 'cy_excel');
-define('DB_USER', getenv('DB_USER') ?: 'root');
-define('DB_PASS', getenv('DB_PASS') !== false ? (string) getenv('DB_PASS') : '');
+/**
+ * YEREL AYAR DOSYASI — config.local.php
+ * ---------------------------------------------------------------------
+ *  ÖLÇÜLEN SORUN: Depoda config.local.php.example bir şablon olarak
+ *  duruyor ve "kopyalayıp doldurun" diyordu; system/.htaccess de o
+ *  dosyayı parola taşıdığı için ayrıca koruyordu. Ama config.php onu
+ *  HİÇ OKUMUYORDU. Kullanıcı dosyayı oluşturup parolasını yazıyor,
+ *  uygulama yine varsayılan root/boş şifreyle bağlanmaya çalışıyor ve
+ *  "erişim reddedildi" hatası alıyordu — üstelik hata, hiç okunmayan
+ *  bir dosyayı işaret etmiyordu, bu yüzden nedeni görünmüyordu.
+ *
+ *  Sıra ÖNEMLİDİR: yerel dosya AŞAĞIDAKİ varsayılanlardan ÖNCE
+ *  yüklenir. PHP'de bir sabit ilk tanımlandığı değeri korur; bu
+ *  yüzden yerel dosyada tanımlanan DB_* değerleri kazanır ve
+ *  aşağıdaki defined() kontrolleri devreye girmez.
+ *
+ *  ÖNCELİK SIRASI:  config.local.php  >  ortam değişkeni  >  varsayılan
+ */
+$cyLocalConfig = __DIR__ . '/config.local.php';
+
+if (is_file($cyLocalConfig)) {
+    require $cyLocalConfig;
+}
+
+/* defined() kontrolü: yerel dosya bu sabiti zaten tanımladıysa PHP
+ * "Constant already defined" uyarısı basar. Kontrol, yerel dosyanın
+ * kısmen doldurulmuş olmasına da izin verir (yalnızca DB_PASS'i
+ * tanımlayıp gerisini varsayılanda bırakabilirsiniz). */
+defined('DB_HOST') || define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
+defined('DB_NAME') || define('DB_NAME', getenv('DB_NAME') ?: 'cy_excel');
+defined('DB_USER') || define('DB_USER', getenv('DB_USER') ?: 'root');
+defined('DB_PASS') || define('DB_PASS', getenv('DB_PASS') !== false ? (string) getenv('DB_PASS') : '');
 
 // utf8mb4: Türkçe karakterler ve emoji dahil tüm Unicode'u destekler.
 // Eski "utf8" (utf8mb3) bazı karakterleri saklayamaz, kullanmayın.
@@ -94,7 +122,17 @@ define('ALLOWED_IMAGE_TYPES', [
  * CANLI SUNUCUYA ALIRKEN MUTLAKA false YAPIN.
  * Aksi halde veritabanı tablo/sütun isimleriniz saldırgana görünür.
  */
-define('APP_DEBUG', true);
+defined('APP_DEBUG') || define('APP_DEBUG', filter_var(getenv('APP_DEBUG') ?: 'true', FILTER_VALIDATE_BOOL));
+
+/**
+ * APP_VERSION — sürüm etiketi.
+ *
+ * Tek yerde durur: kart altbilgisinde gösterilir, README'de ve GitHub
+ * sürüm etiketinde (tag) aynı değer kullanılır. Üç yerde ayrı ayrı
+ * yazılsaydı biri güncellenip diğerleri unutulurdu; kullanıcı hangi
+ * sürümü çalıştırdığını bilemezdi.
+ */
+define('APP_VERSION', '1.1.0');
 
 // Ad ve soyad için karakter sınırları (veritabanındaki VARCHAR(150)
 // ile uyumlu olmalıdır).

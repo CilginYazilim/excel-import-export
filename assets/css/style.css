@@ -92,10 +92,18 @@
  *  GÖRÜNEN veriyle ilgilidir — dışa aktarma, arama kutusundaki
  *  filtreyi kullanır.
  *
- *  flex-wrap KAPALI: satırın bölünmesini istemiyoruz. Ekran dar
- *  gelirse araç çubuğu kendi içinde YATAY KAYAR (overflow-x); sayfa
- *  düzeni bozulmaz, kullanıcı parmağıyla/fareyle kaydırıp butonlara
- *  ulaşabilir.
+ *  MASAÜSTÜNDE flex-wrap kapalıdır: satırın bölünmesini istemiyoruz.
+ *
+ *  MOBİLDE DAVRANIŞ DEĞİŞİR — ve bu bilinçli bir geri adımdır.
+ *  Önceki sürümde araç çubuğu dar ekranda YATAY KAYIYORDU
+ *  (overflow-x: auto). Ölçülen sorun: telefonda o kaydırma alanı
+ *  görünmez; ekrana sığan tek şey arama kutusu olduğu için "İçe
+ *  Aktar" düğmesi VAR OLMADIĞI SANILIYORDU. Sayfanın asıl konusu
+ *  olan üç düğme, keşfedilmesi tesadüfe bağlı hale gelmişti.
+ *
+ *  Bu yüzden 767.98px altında araç çubuğu iki satıra ayrılır:
+ *  arama üstte tam genişlikte, üç düğme altta eşit paylı. Hiçbir
+ *  eylem gizli kalmaz. (Kural aşağıdaki MOBİL bölümündedir.)
  * ================================================================== */
 .cy-toolbar {
     display: flex;
@@ -104,7 +112,6 @@
     justify-content: space-between;
     gap: .75rem;
     margin-bottom: 1rem;
-    overflow-x: auto;
     padding-bottom: .15rem;
 }
 
@@ -306,4 +313,560 @@
 #import_summary .badge {
     font-size: .8rem;
     padding: .45em .7em;
+}
+
+
+/* ==================================================================
+ *  KART BAŞLIĞI: ROZET + TEMA ANAHTARI + "YENİ KAYIT"
+ * ================================================================== */
+.cy-header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+/* Tema anahtarı: ikon + metin. Metin çok dar ekranda gizlenir (aşağıya
+ * bakın); butonun kendisi görünür kalır, çünkü ikon tek başına da
+ * anlaşılır ve title metni açıklamayı zaten taşır. */
+.cy-theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .45rem .8rem;
+    font-size: .82rem;
+}
+
+.cy-theme-toggle__icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* Kart altbilgisi: iki uca yaslı, dar ekranda alt alta. */
+.cy-card__footer--split {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .35rem .75rem;
+}
+
+
+/* ==================================================================
+ *  ALTBİLGİ BAĞLANTILARI
+ * ================================================================== */
+.cy-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem .6rem;
+}
+
+
+/* ==================================================================
+ *  MOBİL DÜZEN — 767.98px ve altı
+ * ------------------------------------------------------------------
+ *  Bu bölümdeki her kural, dar ekranda ölçülen somut bir soruna
+ *  karşılık gelir. Kuralın üstünde sorunun ne olduğu yazılıdır;
+ *  sorun ortadan kalkarsa kural da silinebilir.
+ * ================================================================== */
+@media (max-width: 767.98px) {
+
+    /* Sorun: container'ın yan dolgusu, kartın kenarlığıyla birleşince
+     * ekranın iki yanında dar ve amaçsız bir şerit bırakıyordu. Dar
+     * ekranda yatay piksel pahalıdır; kartı kenara yaklaştırıp içerik
+     * genişliğini geri kazanıyoruz. */
+    .container {
+        padding-left: .75rem;
+        padding-right: .75rem;
+    }
+
+    /* Çentikli telefonlarda yatay modda içerik çentiğin altında
+     * kalmasın (index.php'deki viewport-fit=cover'ın karşılığı).
+     *
+     * Ayrıca background-attachment: sabit arka plan katmanı iOS
+     * Safari'de sayfa kaydırılırken her karede yeniden boyanıyor ve
+     * kaydırma takılıyordu. Mobilde normal akışa alıyoruz; görsel
+     * fark yok, çünkü ışık lekeleri zaten sayfanın en üstünde. */
+    body.cy-app {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        background-attachment: scroll;
+    }
+
+
+    /* ---------- Kart başlığı ---------- */
+
+    /* Sorun: logo + başlık bloğu ile sağdaki eylemler aynı satırda
+     * sıkışıyor, başlık iki kelimede bir kırılıyordu. Dar ekranda
+     * ikisini alt alta almak başlığa tam genişlik verir. */
+    .cy-card__header > .d-flex {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 1rem !important;
+    }
+
+    .cy-header-actions {
+        justify-content: space-between;
+    }
+
+    /* "Yeni Kayıt" tam genişlikte ve kendi satırında: sayfanın birincil
+     * eylemi, en büyük dokunma hedefi olmalı. */
+    .cy-btn--add {
+        flex: 1 0 100%;
+        justify-content: center;
+        padding-top: .6rem;
+        padding-bottom: .6rem;
+    }
+
+
+    /* ---------- Araç çubuğu ---------- */
+
+    /* Yatay kaydırma yerine iki satır (gerekçesi yukarıdaki
+     * TABLO ARAÇ ÇUBUĞU bloğunda yazılıdır). */
+    .cy-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .cy-toolbar__search {
+        flex: 1 1 100%;
+        max-width: none;
+    }
+
+    .cy-toolbar__actions {
+        width: 100%;
+        gap: .4rem;
+    }
+
+    /* Üç düğme eşit paylı: hangisinin yazısının daha uzun olduğu
+     * düzeni belirlemesin, hepsi aynı genişlikte olsun. */
+    .cy-toolbar__actions .cy-btn {
+        flex: 1 1 0;
+        justify-content: center;
+        padding: .55rem .35rem;
+        font-size: .78rem;
+    }
+
+
+    /* ==============================================================
+     *  TABLO → KART GÖRÜNÜMÜ
+     * --------------------------------------------------------------
+     *  ÖLÇÜLEN SORUN: 9 sütunluk tablo 360px genişlikte bir telefona
+     *  sığmaz. Önceki çözüm .table-responsive ile yatay kaydırmaydı;
+     *  pratikte kullanıcı yalnızca "#" ve "Foto" sütunlarını görüyor,
+     *  asıl veriyi (e-posta, maaş) görmek için her satırda sağa
+     *  kaydırıp geri gelmek zorunda kalıyordu. Karşılaştırma
+     *  imkânsızdı: iki kaydın maaşını aynı anda göremiyordunuz.
+     *
+     *  ÇÖZÜM: Her <tr> bir KARTA dönüşür. Sütun başlıkları <thead>
+     *  yerine her hücrenin SOLUNDA, data-label özniteliğinden
+     *  ::before ile yazılır. Etiketleri app.js yerleştirir
+     *  (rowCallback); böylece index.php'deki <thead> tek doğru
+     *  kaynak olarak kalır ve sütun eklendiğinde bu dosyaya
+     *  dokunulmaz.
+     *
+     *  NEDEN DataTables'ın "responsive" EKLENTİSİ DEĞİL?
+     *  Eklenti ~40 KB JS/CSS getirir ve satırları açılır-kapanır hale
+     *  sokar: veriyi görmek için yine bir dokunuş gerekir. Buradaki
+     *  çözüm hiçbir kütüphane eklemez ve tüm alanlar ilk bakışta
+     *  görünür. Projenin "sıfır bağımlılık" duruşuyla da tutarlıdır.
+     * ============================================================== */
+
+    /* Kaydırma çubuğunu kapatıyoruz: artık kayacak bir şey yok ve
+     * açık kalırsa kartların altında boş bir şerit bırakır. */
+    .cy-card__body .table-responsive {
+        overflow-x: visible;
+    }
+
+    /*
+     * !important BURADA ZORUNLUDUR — ve sebebi şudur:
+     *
+     * DataTables kurulumdan sonra tabloyu ÖLÇER ve genişliğini
+     * <table style="width: 1148px"> gibi SATIR İÇİ bir stil olarak
+     * yazar. Satır içi stil, harici bir dosyadaki her kuralı yener;
+     * buraya sadece "width: 100%" yazıldığında tablo 1148px kalıyor,
+     * kartlar ekranın dışına taşıyor ve sayfa yatay kayıyordu
+     * (ekran görüntüsünde işlem butonlarının sağ kenardan
+     * kaybolması bu yüzdendi).
+     *
+     * Alternatif, DataTables'ta autoWidth:false demekti; ama o ayar
+     * MASAÜSTÜ tablosunun sütun genişliklerini de bozar. Sorun
+     * yalnızca dar ekranda olduğu için çözüm de yalnızca burada
+     * durmalı.
+     */
+    #user_data {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    #user_data,
+    #user_data tbody,
+    #user_data tr,
+    #user_data td {
+        display: block;
+        width: 100%;
+    }
+
+    /* Başlık satırı gizlenir; içeriği ::before ile hücrelere taşındı.
+     * DataTables thead'i sıralama için kullanır, görünür olmasına
+     * gerek yoktur. */
+    #user_data thead {
+        display: none;
+    }
+
+    #user_data tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .3rem .6rem;
+        margin-bottom: .75rem;
+        padding: .85rem .9rem;
+        border: 1px solid var(--cy-border);
+        border-radius: var(--cy-radius);
+        background: var(--cy-surface);
+        box-shadow: var(--cy-shadow-sm);
+    }
+
+    /* Hover vurgusu masaüstünde "bu satırdayım" der; dokunmatikte
+     * hover yoktur ve kart zaten kendi kenarlığıyla ayrışır. */
+    #user_data tbody tr:hover > td {
+        background-color: transparent;
+    }
+
+    #user_data td {
+        border: 0;
+        padding: 0;
+        width: 100%;
+        min-width: 0;          /* flex öğesinin içeriğinden büyük kalmasını engeller */
+        overflow-wrap: anywhere;
+    }
+
+    /* Etiket: hücrenin solunda, SABİT genişlikte. Sabit genişlik,
+     * değerlerin alt alta hizalanmasını sağlar — göz tek bir dikey
+     * çizgiyi takip eder, her satırda değeri yeniden aramaz. */
+    #user_data td::before {
+        content: attr(data-label);
+        display: inline-block;
+        width: 6.5rem;
+        flex-shrink: 0;
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--cy-text-muted);
+    }
+
+    /*
+     * KARTIN ÜST SATIRI:  [foto] [ad] [soyad] ......... [#id]
+     *
+     * order ile DOM sırasını değil GÖRSEL sırayı değiştiriyoruz.
+     * HTML'deki sıra (#, Foto, Ad, ...) masaüstü tablosu için
+     * doğrudur ve ekran okuyucu onu okur; burada yalnızca yerleşimi
+     * kartın okunma sırasına uyduruyoruz.
+     */
+    #user_data td:nth-child(2) {           /* Foto */
+        order: 1;
+        width: auto;
+        text-align: left !important;
+    }
+
+    #user_data td:nth-child(3) {           /* Ad */
+        order: 2;
+        width: auto;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    #user_data td:nth-child(4) {           /* Soyad */
+        order: 3;
+        width: auto;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    #user_data td:nth-child(1) {           /* # (kayıt no) */
+        order: 4;
+        width: auto;
+        margin-left: auto;
+        font-size: .72rem;
+        opacity: .75;
+    }
+
+    /* Üst satırdaki dört hücrede etiket yazılmaz: fotoğrafın, adın ve
+     * kayıt numarasının ne olduğu bakışta bellidir; "AD:" yazmak kartı
+     * gürültüye boğardı. */
+    #user_data td:nth-child(2)::before,
+    #user_data td:nth-child(3)::before,
+    #user_data td:nth-child(4)::before {
+        content: none;
+    }
+
+    /* Kayıt numarasının etiketi "#" işaretine indirgenir. Etiket
+     * tamamen kaldırılsaydı kartın sağ üstünde bağlamsız bir sayı
+     * ("61") kalırdı; "#61" ise ne olduğunu tek karakterle söyler.
+     * Sabit 6.5rem genişlik burada geçerli değil — auto veriyoruz,
+     * yoksa sayı kartın ortasına itilirdi. */
+    #user_data td:nth-child(1)::before {
+        content: "#";
+        width: auto;
+        margin-right: .1rem;
+        font-size: inherit;
+        letter-spacing: 0;
+    }
+
+    /* Bilgi satırları: e-posta, departman, maaş, başlama */
+    #user_data td:nth-child(5) { order: 5; }
+    #user_data td:nth-child(6) { order: 6; }
+    #user_data td:nth-child(7) { order: 7; text-align: left !important; }
+    #user_data td:nth-child(8) { order: 8; }
+
+    #user_data td:nth-child(5),
+    #user_data td:nth-child(6),
+    #user_data td:nth-child(7),
+    #user_data td:nth-child(8) {
+        display: flex;
+        align-items: baseline;
+        font-size: .88rem;
+    }
+
+    /* İlk bilgi satırı, isim bloğundan ince bir çizgiyle ayrılır. */
+    #user_data td:nth-child(5) {
+        margin-top: .5rem;
+        padding-top: .6rem;
+        border-top: 1px dashed var(--cy-border);
+    }
+
+    /* Uzun e-postalar kartı yatayda taşırmasın: masaüstünde tek satırda
+     * durmaları için konan .cy-nowrap burada tersine çevrilir. */
+    #user_data td:nth-child(5) .cy-nowrap {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* İşlem butonları: kartın altında, tam genişlikte ve büyük.
+     * 34px'lik masaüstü ikonları dokunmatikte ıskalanıyordu; 44px
+     * parmak hedefi için yaygın kabul gören alt sınırdır. */
+    #user_data td:nth-child(9) {
+        order: 9;
+        margin-top: .6rem;
+        padding-top: .6rem;
+        border-top: 1px solid var(--cy-border);
+    }
+
+    #user_data td:nth-child(9)::before { content: none; }
+
+    #user_data td:nth-child(9) .cy-actions {
+        display: flex;
+        width: 100%;
+        gap: .4rem;
+    }
+
+    #user_data td:nth-child(9) .cy-btn-icon {
+        flex: 1 1 0;
+        width: auto;
+        height: 44px;
+        font-size: 1.05rem;
+    }
+
+    /* "Kayıt yok" / "Yükleniyor" satırları kart düzenine girmemeli:
+     * tek hücreli oldukları için etiket ve hizalama kuralları onlarda
+     * anlamsız bir boşluk üretiyordu. */
+    #user_data td.dataTables_empty {
+        display: block;
+        text-align: center !important;
+        padding: 1.5rem .5rem;
+    }
+
+    /* Avatar kart içinde biraz büyür: artık dar bir tablo hücresinde
+     * değil, kartın kimlik satırında duruyor. */
+    #user_data .cy-avatar {
+        width: 44px;
+        height: 44px;
+    }
+
+
+    /* ---------- Alt çubuk (sayfalama) ---------- */
+
+    /* Sorun: üç parça (uzunluk seçici, bilgi metni, sayfalama) dar
+     * ekranda kenarlara yapışıp ortada büyük bir boşluk bırakıyordu.
+     * Alt alta ve ortalanmış hâlde üçü de okunur kalır. */
+    .cy-bottom-bar {
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .cy-bottom-bar__pagination .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 0;
+    }
+
+    /* Sayfa numaraları da parmak hedefi büyüklüğüne çıkar. */
+    .cy-bottom-bar__pagination .page-link {
+        min-width: 40px;
+        padding: .45rem .6rem;
+        text-align: center;
+    }
+
+
+    /* ---------- Formlar ---------- */
+
+    /*
+     * iOS Safari, yazı tipi 16px'ten KÜÇÜK olan bir alana
+     * dokunulduğunda sayfayı otomatik büyütür ve geri küçültmez —
+     * kullanıcı formu doldurduktan sonra sayfayı elle uzaklaştırmak
+     * zorunda kalır. Tek çare alanların yazı tipini 16px'e
+     * sabitlemektir; bu bir tercih değil, o davranışı kapatan tek
+     * anahtardır.
+     */
+    .form-control,
+    .form-select,
+    .cy-toolbar__search {
+        font-size: 16px;
+    }
+
+    /* Modal altbilgisindeki butonlar alt alta ve tam genişlikte.
+     * column-reverse: birincil eylem (Kaydet) ÜSTTE kalsın —
+     * DOM sırası masaüstünde "İptal, Kaydet" olarak doğrudur, dikey
+     * dizilimde ise kullanıcı önce onaylayıcı butonu görmeli. */
+    .cy-modal .modal-footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: .5rem;
+    }
+
+    .cy-modal .modal-footer > .btn {
+        width: 100%;
+        margin: 0;
+        padding-top: .6rem;
+        padding-bottom: .6rem;
+    }
+
+    /* Tam ekran modalda gövde kendi içinde kaysın; altbilgi butonları
+     * her zaman ekranda kalsın. */
+    .modal-fullscreen-sm-down .modal-body,
+    .modal-fullscreen-md-down .modal-body {
+        overflow-y: auto;
+    }
+
+
+    /* ---------- İçe aktarma önizlemesi ---------- */
+
+    /* Önizleme tablosu KART DÜZENİNE ÇEVRİLMEZ: buradaki amaç tek bir
+     * kaydı okumak değil, satırları BİRBİRİYLE KARŞILAŞTIRMAKTIR
+     * (hangileri hatalı, kaçı güncellenecek). Karşılaştırma sütun
+     * hizası ister. Bu yüzden yatay kaydırma burada doğru çözümdür. */
+    .cy-preview-wrapper {
+        max-height: 60vh;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .cy-preview-table {
+        font-size: .78rem;
+    }
+
+    .cy-import-help {
+        font-size: .85rem;
+        padding: .85rem .9rem;
+    }
+
+
+    /* ---------- Bildirimler (toast) ---------- */
+
+    /*
+     * Sorun: bildirimler sağ ÜST köşede çıkıyordu. Telefonda orası
+     * adres çubuğunun hemen altıdır ve tek elle kullanırken
+     * başparmağın en uzak olduğu bölgedir; kapatma düğmesine ulaşmak
+     * için telefonu elde kaydırmak gerekiyordu. Alta almak hem
+     * ulaşılabilir kılar hem de içeriğin üstünü örtmez.
+     */
+    .cy-toast-container {
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100%;
+        padding: .75rem !important;
+        padding-bottom: calc(.75rem + env(safe-area-inset-bottom)) !important;
+    }
+
+    .cy-toast {
+        width: 100%;
+    }
+
+
+    /* ---------- Altbilgi ---------- */
+
+    /* Bağlantılar alt alta; aradaki ayraç gizlenir (tek satırda
+     * anlamlıydı, alt alta dizilince havada kalıyordu). */
+    .cy-footer-links {
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+    .cy-footer-links__sep {
+        display: none;
+    }
+
+    .cy-footer-links a {
+        display: block;
+        padding: .3rem 0;
+    }
+}
+
+
+/* ==================================================================
+ *  ÇOK DAR EKRAN — 400px ve altı (küçük telefonlar)
+ * ================================================================== */
+@media (max-width: 400px) {
+
+    /* Tema anahtarının yazısı gizlenir, ikon kalır: kayıt sayısı
+     * rozetiyle aynı satırda kalabilmesi için. */
+    .cy-theme-toggle__text {
+        display: none;
+    }
+
+    .cy-theme-toggle {
+        padding: .45rem .55rem;
+    }
+
+    /* Araç çubuğu düğmelerinde yazıyı KÜÇÜLTÜYORUZ, gizlemiyoruz:
+     * "Dışa Aktar" ile "İçe Aktar" birbirine çok benzer iki eylemdir,
+     * yalnızca ok yönüyle ayırt edilmeleri hata üretirdi. */
+    .cy-toolbar__actions .cy-btn {
+        font-size: .72rem;
+        padding: .55rem .2rem;
+    }
+
+    /* Etiket sütunu daralır ki değerlere yer kalsın. */
+    #user_data td::before {
+        width: 5.4rem;
+        font-size: .66rem;
+    }
+}
+
+
+/* ==================================================================
+ *  YATAY MOD (landscape) — alçak ama geniş ekran
+ * ------------------------------------------------------------------
+ *  Telefon yan çevrildiğinde kullanılabilir yükseklik ~400px'e düşer.
+ *  Ortalanmış bir modal bu yükseklikte ekranı taşırır; kullanıcı ne
+ *  başlığı ne de butonları görebilir. Yükseklik sınırını görünür
+ *  alana bağlamak, gövdenin kendi içinde kaymasını sağlar.
+ * ================================================================== */
+@media (max-height: 480px) and (orientation: landscape) {
+    .cy-modal .modal-dialog {
+        margin-top: .5rem;
+        margin-bottom: .5rem;
+    }
+
+    .cy-modal .modal-body {
+        max-height: 65vh;
+        overflow-y: auto;
+    }
+
+    .cy-preview-wrapper {
+        max-height: 45vh;
+    }
 }

@@ -176,6 +176,14 @@ $(function () {
     /* =============================================================
      *  DATATABLES KURULUMU
      * ============================================================= */
+
+    /* Sütun başlıkları, mobil kart görünümünde hücre etiketi olarak
+     * kullanılır (aşağıdaki rowCallback'e bakın). Tablo başlıkları
+     * sayfa ömrü boyunca değişmediği için bir kez okunur. */
+    var COLUMN_LABELS = $('#user_data thead th').map(function () {
+        return $(this).text().trim();
+    }).get();
+
     var dataTable = $('#user_data').DataTable({
 
         processing: true,
@@ -225,6 +233,31 @@ $(function () {
             { targets: 6, className: 'text-end' },
             { targets: 8, orderable: false, searchable: false, className: 'text-center' }
         ],
+
+        /* MOBİL KART GÖRÜNÜMÜ İÇİN ETİKETLER
+         * -------------------------------------------------------------
+         * Dar ekranda tablo kart düzenine geçer ve <thead> gizlenir
+         * (bkz. assets/css/style.css, "TABLO → KART GÖRÜNÜMÜ").
+         * Başlıklar gizlenince "ahmet@ornek.com" ile "Yazılım"ın hangi
+         * sütuna ait olduğu kaybolur; CSS bunu her hücrenin soluna
+         * data-label değerini yazarak geri getirir.
+         *
+         * NEDEN ETİKETLER CSS'E ELLE YAZILMADI?
+         * Yazılsaydı sütun listesi İKİ yerde dururdu: index.php'deki
+         * <thead> ve style.css. Biri güncellenip diğeri unutulduğunda
+         * mobil kullanıcı YANLIŞ etiketi okurdu — hatanın masaüstünde
+         * hiçbir izi olmadığı için de fark edilmezdi. Etiketleri
+         * <thead>'den okuyarak tek doğru kaynağı koruyoruz.
+         *
+         * Hesap her çizimde bir kez yapılır (satır başına değil):
+         * başlıklar sayfa ömrü boyunca değişmez. */
+        rowCallback: function (row) {
+            $(row).children('td').each(function (index) {
+                if (COLUMN_LABELS[index]) {
+                    this.setAttribute('data-label', COLUMN_LABELS[index]);
+                }
+            });
+        },
 
         drawCallback: function (settings) {
             $('#total_records').text(settings.json ? settings.json.recordsTotal : 0);
@@ -729,4 +762,86 @@ $(function () {
      * ============================================================= */
     $('#userModal').on('hidden.bs.modal', resetForm);
     $('#importModal').on('hidden.bs.modal', resetImport);
+
+
+    /* =============================================================
+     *  11) TEMA ANAHTARI (KOYU / AÇIK)
+     * -------------------------------------------------------------
+     *  Marka kalıbı (cilginyazilim.css) iki kaynağa birden bakar:
+     *
+     *    @media (prefers-color-scheme: dark)  → sistem tercihi
+     *    :root[data-cy-theme="dark"]          → kullanıcının seçimi
+     *
+     *  Buradaki kod YALNIZCA ikinci kaynağı yazar. Tek bir renk
+     *  değeri JavaScript'te tanımlı değildir; renkler CSS'te kalır,
+     *  bu dosya sadece "hangi palet" sorusunu yanıtlar.
+     *
+     *  ÜÇ DURUM VARDIR, İKİ DEĞİL:
+     *    1) öznitelik yok      → sisteme uy (varsayılan)
+     *    2) data-cy-theme=dark → her koşulda koyu
+     *    3) data-cy-theme=light→ her koşulda açık
+     *
+     *  Sayfa ilk açıldığında öznitelik <head> içindeki küçük betikle
+     *  zaten uygulanmıştır (bkz. index.php); orada yapılmasının
+     *  sebebi, açık temanın bir an görünüp koyuya atlamasını
+     *  ("yanıp sönme") önlemektir. Burada yalnızca butonun görünümü
+     *  ilk duruma göre ayarlanır ve tıklamalar dinlenir.
+     * ============================================================= */
+    var $themeToggle = $('#theme_toggle');
+    var systemPrefersDark = window.matchMedia
+        ? window.matchMedia('(prefers-color-scheme: dark)')
+        : null;
+
+    /** Şu anda koyu tema mı görünüyor? */
+    function isDarkActive() {
+        var attr = document.documentElement.getAttribute('data-cy-theme');
+
+        if (attr === 'dark')  { return true; }
+        if (attr === 'light') { return false; }
+
+        return !!(systemPrefersDark && systemPrefersDark.matches);
+    }
+
+    /** Butonun yazısını, ikonunu ve erişilebilirlik durumunu günceller. */
+    function syncThemeButton() {
+        var dark = isDarkActive();
+
+        // Buton, GİDİLECEK yönü gösterir: koyu temadayken "Açık" yazar.
+        // Bulunulan durumu yazsaydı ("Koyu") kullanıcı butona basınca
+        // ne olacağını tahmin edemezdi.
+        $themeToggle.find('.cy-theme-toggle__icon').text(dark ? '☀' : '🌙');
+        $themeToggle.find('.cy-theme-toggle__text').text(dark ? 'Açık' : 'Koyu');
+        $themeToggle.attr('aria-pressed', dark ? 'true' : 'false');
+        $themeToggle.attr('title', dark ? 'Açık temaya geç' : 'Koyu temaya geç');
+    }
+
+    $themeToggle.on('click', function () {
+        var next = isDarkActive() ? 'light' : 'dark';
+
+        document.documentElement.setAttribute('data-cy-theme', next);
+
+        /* localStorage gizli sekmede veya site verileri engellendiğinde
+         * yazarken istisna fırlatır. Yakalamazsak buton çalışmaz hale
+         * gelir; oysa tercihin kaydedilememesi, o oturumda temanın
+         * değişmesine engel değildir. */
+        try {
+            localStorage.setItem('cy-theme', next);
+        } catch (e) {}
+
+        syncThemeButton();
+    });
+
+    /* Kullanıcı kendi seçimini yapmadıysa sistem temasını izlemeye
+     * devam ederiz: telefon akşam otomatik koyu temaya geçtiğinde
+     * sayfa da geçsin. Seçim yapıldıysa öznitelik yerinde durur ve
+     * bu dinleyicinin bir etkisi olmaz. */
+    if (systemPrefersDark && typeof systemPrefersDark.addEventListener === 'function') {
+        systemPrefersDark.addEventListener('change', function () {
+            if (!document.documentElement.getAttribute('data-cy-theme')) {
+                syncThemeButton();
+            }
+        });
+    }
+
+    syncThemeButton();
 });

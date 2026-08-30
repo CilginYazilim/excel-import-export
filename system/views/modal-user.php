@@ -23,7 +23,13 @@ if (!defined("CY_APP")) {
 }
 ?>
 <div class="modal fade cy-modal" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <!--
+        modal-fullscreen-sm-down : 576px altında modal ekranı tamamen
+        kaplar. Küçük ekranda ortalanmış bir kutu, kenarlarda kullanılamaz
+        bir boşluk bırakıyor ve form alanları gereksiz yere daralıyordu;
+        tam ekranda klavye açıldığında da içerik kaymıyor.
+    -->
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down">
         <form method="post" id="user_form" enctype="multipart/form-data" novalidate>
             <div class="modal-content">
 

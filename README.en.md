@@ -8,8 +8,12 @@ Real `.xlsx` generation and parsing in PHP with **zero dependencies**.
 No Composer, no PhpSpreadsheet, no `vendor/` directory.
 
 Preview before commit · Row-by-row validation · Transaction safety
+Mobile-first card layout · Dark theme
 
-[cilginyazilim.com](https://cilginyazilim.com) · MIT License · [🇹🇷 Türkçe](README.md)
+**v1.1.0** · [cilginyazilim.com](https://cilginyazilim.com) · MIT License · [🇹🇷 Türkçe](README.md)
+
+📚 **[Code library](https://cilginyazilim.com/kutuphane)** ·
+📘 **[Walkthrough for this example](https://cilginyazilim.com/kutuphane/excel-ice-disa-aktarma)**
 
 </div>
 
@@ -37,6 +41,16 @@ Plus **template download**: an empty file with the correct headers and two sampl
 Before saving you see exactly what will happen to each row — which is new, which will be updated, which is already identical, which is invalid and **why**:
 
 ![Import preview](assets/images/screenshot-import.png)
+
+### On a phone
+
+On a narrow screen the nine-column table **turns into cards**; the column headers move to the left of each value as labels. There is no horizontal scrolling — every field is visible at a glance:
+
+<div align="center">
+
+<img src="assets/images/screenshot-mobile.png" alt="Mobile card layout" width="330">
+
+</div>
 
 ---
 
@@ -98,11 +112,28 @@ mysql -u root -p < excel-import-export/cy_excel.sql
 
 Then open: `http://localhost/excel-import-export/`
 
-To use a different database, edit the `DB_*` constants in `system/config.php` or define `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS` as environment variables.
+### Where do the database credentials go?
 
-**Before going live:** set `APP_DEBUG` to `false` in `system/config.php`.
+There are three options; the application reads them in this **order of precedence**:
 
-**Requirements:** PHP 8.1+ (`zip`, `xml`, `mbstring`, `gd`) · MySQL 5.7+ / MariaDB 10.3+
+| Priority | Location | When |
+|----------|----------|------|
+| 1 | `system/config.local.php` | **Recommended.** Never committed, never wiped by a deploy |
+| 2 | Environment variables (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) | Docker / CI / platform hosting |
+| 3 | Defaults in `system/config.php` | Local XAMPP trial only (root / empty password) |
+
+The recommended path is two steps:
+
+```bash
+cp system/config.local.php.example system/config.local.php
+# then fill in the four DB_* lines in the copy
+```
+
+`config.local.php` is in `.gitignore`, so your password never reaches the repository. `system/.htaccess` also blocks that file from being requested over HTTP — so that if the PHP handler is ever lost, the file is not served as plain text.
+
+**Before going live:** set `APP_DEBUG` to `false`. Adding `define('APP_DEBUG', false);` to `config.local.php` is enough; you never need to touch `config.php`.
+
+**Requirements:** PHP 8.1+ (`zip`, `xml`, `mbstring`, `gd`) · MySQL 5.7+ / MariaDB 10.3+ · A modern browser (uses CSS `env()` and flexbox)
 
 ---
 
@@ -110,26 +141,29 @@ To use a different database, edit the `DB_*` constants in `system/config.php` or
 
 ```
 excel-import-export/
-├── index.php                   ← Page skeleton (258 lines)
-├── cy_excel.sql                ← Database setup (cy_excel schema + 50 sample rows)
+├── index.php                        ← Page skeleton
+├── cy_excel.sql                     ← Database setup (cy_excel schema + 50 sample rows)
 ├── system/
-│   ├── config.php              ← Settings + PDO connection + session
-│   ├── function.php            ← Helpers, validators, COLUMN DEFINITIONS
-│   ├── ajax.php                ← JSON endpoint (CRUD + preview + commit)
-│   ├── export.php              ← File-download endpoint
-│   ├── views/                  ← Modal windows (partial templates)
-│   │   ├── modal-user.php      ← Add / edit form
-│   │   ├── modal-detail.php    ← Record detail
-│   │   ├── modal-delete.php    ← Delete confirmation
-│   │   └── modal-import.php    ← Import wizard
+│   ├── .htaccess                    ← ALLOWLIST: only ajax.php and export.php are reachable
+│   ├── config.php                   ← Settings + PDO connection + session + APP_VERSION
+│   ├── config.local.php.example     ← Template to copy (never put a password in it)
+│   ├── function.php                 ← Helpers, validators, COLUMN DEFINITIONS
+│   ├── ajax.php                     ← JSON endpoint (CRUD + preview + commit)
+│   ├── export.php                   ← File-download endpoint
+│   ├── views/                       ← Modal windows (partial templates)
+│   │   ├── .htaccess                ← Blocks direct requests
+│   │   ├── modal-user.php           ← Add / edit form
+│   │   ├── modal-detail.php         ← Record detail
+│   │   ├── modal-delete.php         ← Delete confirmation
+│   │   └── modal-import.php         ← Import wizard
 │   └── Excel/
-│       ├── XlsxWriter.php      ← Produces .xlsx via ZipArchive
-│       └── XlsxReader.php      ← Parses .xlsx via XMLReader
+│       ├── XlsxWriter.php           ← Produces .xlsx via ZipArchive
+│       └── XlsxReader.php           ← Parses .xlsx via XMLReader
 ├── assets/
-│   ├── css/cilginyazilim.css   ← Shared brand design system
-│   ├── css/style.css           ← Page-specific styles only
-│   └── js/app.js               ← All UI behaviour
-└── upload/                     ← Profile images (protected by .htaccess)
+│   ├── css/cilginyazilim.css        ← Shared brand design system (dark theme included)
+│   ├── css/style.css                ← Page-specific styles + MOBILE LAYOUT
+│   └── js/app.js                    ← All UI behaviour + theme switch
+└── upload/                          ← Profile images (protected by .htaccess)
 ```
 
 ### Notable functions
@@ -343,6 +377,101 @@ Before opening the package, the total uncompressed size declared by the archive 
 
 ---
 
+## Mobile layout — turning the table into cards
+
+A nine-column table does not fit a 360-pixel phone. The common fix is `overflow-x: auto`; this repository used it for a while and it produced **two concrete problems**:
+
+1. Only `#` and `Photo` fit on screen, so reading the actual data (email, salary) meant scrolling right and back on every single row.
+2. **Comparison became impossible:** you could not see two salaries at the same time — which is the whole reason to look at a list.
+
+Below `767.98px` every `<tr>` now becomes a **card**:
+
+```
+┌──────────────────────────────────────┐
+│ [A]  Ayşe  ŞAHİN                 #61 │
+│ ──────────────────────────────────── │
+│ EMAIL       ayse.sahin@ornek.com     │
+│ DEPARTMENT  Pazarlama                │
+│ SALARY      55.300,00                │
+│ START DATE  06.09.2021               │
+│ ──────────────────────────────────── │
+│  [ 👁 ]      [ ✎ ]       [ 🗑 ]      │
+└──────────────────────────────────────┘
+```
+
+### Where do the labels come from?
+
+Once `<thead>` is hidden, you can no longer tell which column "Pazarlama" belongs to. CSS restores that by printing the `data-label` value to the left of every cell:
+
+```css
+#user_data td::before {
+    content: attr(data-label);
+    width: 6.5rem;          /* fixed width → values line up vertically */
+}
+```
+
+The `data-label` attribute is set by `rowCallback` in `app.js`, which reads the labels **from `<thead>`**:
+
+```js
+var COLUMN_LABELS = $('#user_data thead th').map(function () {
+    return $(this).text().trim();
+}).get();
+```
+
+Had the labels been typed into the CSS by hand, the column list would exist in two places; update one and forget the other and **the mobile user reads the wrong label** — a bug with no trace whatsoever on desktop. As written, the chain `excel_columns()` → `<thead>` → mobile label is fed from one source.
+
+### Why not the DataTables `responsive` extension?
+
+The extension adds ~40 KB of JS/CSS and turns rows into expand/collapse widgets: you still need a tap to see the data. This solution adds **no library at all** and every field is visible at a glance — which also matches the project's zero-dependency stance.
+
+### A hidden trap: inline width
+
+After initialisation DataTables measures the table and writes its width as an **inline** style, e.g. `<table style="width: 1148px">`. An inline style beats every rule in an external file, which is why the card layout overflowed the screen on the first attempt. The fix is scoped to narrow screens:
+
+```css
+@media (max-width: 767.98px) {
+    #user_data { width: 100% !important; min-width: 0 !important; }
+}
+```
+
+Setting `autoWidth: false` in DataTables would also work, but that option breaks the **desktop** column widths too. The problem only exists on narrow screens, so the fix stays there.
+
+### Other mobile fixes
+
+| Problem | Fix |
+|---------|-----|
+| Toolbar scrolled sideways and the **"Import" button was invisible** | Two rows: search full width on top, three equal-width buttons below |
+| 34-pixel action icons were missed by fingers | Full width under the card, **44 px** tall (the accepted minimum touch target) |
+| Modals squeezed into the middle, leaving unusable margins | `modal-fullscreen-sm-down` (`md-down` for the import wizard) |
+| Modal buttons side by side, "Cancel" too close to "Save" | Stacked, full width, **primary action on top** (`column-reverse`) |
+| iOS Safari zoomed in on form fields and never zoomed back out | `font-size: 16px` on inputs — the only switch that disables that behaviour |
+| Toasts appeared in the top-right, unreachable one-handed | Bottom of the screen, full width, with `env(safe-area-inset-bottom)` padding |
+| The fixed background layer stuttered while scrolling on iOS | `background-attachment: scroll` on mobile |
+| Rotating the phone made modals overflow the screen | `@media (orientation: landscape)` → the body scrolls inside itself |
+
+---
+
+## Dark theme
+
+The brand design system (`cilginyazilim.css`) looks at two sources at once:
+
+```css
+@media (prefers-color-scheme: dark) { :root:not([data-cy-theme="light"]) { … } }
+:root[data-cy-theme="dark"] { … }
+```
+
+The 🌙 / ☀ button in the header changes **only the `data-cy-theme` attribute**; not a single colour value lives in JavaScript. There are three states, not two:
+
+| Attribute | Result |
+|-----------|--------|
+| absent (default) | Follows the system preference; when the phone goes dark in the evening, so does the page |
+| `data-cy-theme="dark"` | Always dark |
+| `data-cy-theme="light"` | Always light |
+
+The preference is kept in `localStorage` and applied **inside `<head>`**, before the page paints. `app.js` loads at the bottom of the page, so putting it there would draw the light theme first and jump to dark a moment later — a white flash on every page load. Because `localStorage` access throws in private windows, both the read and the write are wrapped in `try/catch`.
+
+---
+
 ## Performance (measured)
 
 | Operation | Result |
@@ -361,7 +490,7 @@ The default limit is 2,000 rows (`IMPORT_MAX_ROWS`), because validated rows are 
 
 | What | Where |
 |------|-------|
-| Database credentials | `system/config.php` → `DB_*` constants (or environment variables) |
+| Database credentials | `system/config.local.php` (recommended) or environment variables |
 | Upload size limits | `config.php` → `UPLOAD_MAX_BYTES`, `IMPORT_MAX_BYTES` |
 | Row limit | `config.php` → `IMPORT_MAX_ROWS` |
 | Allowed image types | `config.php` → `ALLOWED_IMAGE_TYPES` |
@@ -370,6 +499,9 @@ The default limit is 2,000 rows (`IMPORT_MAX_ROWS`), because validated rows are 
 | Header aliases | `function.php` → `excel_header_aliases()` |
 | Excel colours / styles | `XlsxWriter.php` → `stylesXml()` |
 | Page-specific appearance | `assets/css/style.css` |
+| Mobile breakpoint | `style.css` → `@media (max-width: 767.98px)` |
+| Brand colours / dark palette | `cilginyazilim.css` → `:root` and `[data-cy-theme]` blocks |
+| Version number | `config.php` → `APP_VERSION` (shown in the card footer) |
 
 > **Do not touch `assets/css/cilginyazilim.css`.** It is the shared brand design system used across projects; everything page-specific belongs in `style.css`.
 
@@ -386,6 +518,25 @@ The default limit is 2,000 rows (`IMPORT_MAX_ROWS`), because validated rows are 
 
 ---
 
+## Changelog
+
+### v1.1.0
+
+- **Mobile card layout** — the nine-column table becomes cards on narrow screens; horizontal scrolling is gone and column labels are generated from `<thead>`.
+- **Dark theme switch** — follows the system preference, remembers the user's choice in `localStorage`, and no longer flashes on page load.
+- **Touch targets raised to 44 px**; modals go fullscreen on narrow screens and their buttons stack full width.
+- **iOS auto-zoom disabled** (`font-size: 16px` on form fields).
+- **Toasts moved to the bottom of the screen** with `safe-area-inset` padding.
+- **`config.local.php` is finally read** — the file shipped as a template and `system/.htaccess` protected it, but `config.php` never included it; anyone who put their password there was silently running on the default credentials.
+- `APP_DEBUG` can be set from an environment variable or from `config.local.php`; a new `APP_VERSION` constant is shown in the card footer.
+- The `.gitignore` pattern was widened to `system/config.local.*`, so any copy placed beside it stays hidden by default.
+
+### v1.0.0
+
+- Zero-dependency `.xlsx` reading/writing, preview-before-commit import, server-side DataTables, security layers.
+
+---
+
 ## License
 
 MIT — download and use it however you like.
@@ -393,3 +544,16 @@ Copyright: **Çılgın Yazılım** ([cilginyazilim.com](https://cilginyazilim.co
 
 To contribute, fork the repository and open a pull request:
 [github.com/CilginYazilim/excel-import-export](https://github.com/CilginYazilim/excel-import-export)
+
+---
+
+<div align="center">
+
+### More code examples
+
+**[📚 cilginyazilim.com/kutuphane](https://cilginyazilim.com/kutuphane)**
+
+Step-by-step walkthrough of this example:
+**[Excel Import / Export](https://cilginyazilim.com/kutuphane/excel-ice-disa-aktarma)**
+
+</div>

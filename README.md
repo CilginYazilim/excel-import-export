@@ -8,8 +8,12 @@
 Composer yok, PhpSpreadsheet yok, `vendor/` klasörü yok.
 
 Önizlemeli toplu yükleme · Satır satır doğrulama · Transaction güvenliği
+Mobil öncelikli kart görünümü · Koyu tema
 
-[cilginyazilim.com](https://cilginyazilim.com) · MIT Lisansı · [🇬🇧 English](README.en.md)
+**v1.1.0** · [cilginyazilim.com](https://cilginyazilim.com) · MIT Lisansı · [🇬🇧 English](README.en.md)
+
+📚 **[Örnek Kod Kütüphanesi](https://cilginyazilim.com/kutuphane)** ·
+📘 **[Bu örneğin anlatım sayfası](https://cilginyazilim.com/kutuphane/excel-ice-disa-aktarma)**
 
 </div>
 
@@ -37,6 +41,16 @@ Ek olarak **şablon indirme**: doğru başlıklara sahip, iki örnek satır içe
 Kaydetmeden önce her satırın ne olacağını görürsünüz — hangisi yeni, hangisi güncellenecek, hangisi zaten aynı, hangisi hatalı ve **neden** hatalı:
 
 ![İçe aktarma önizlemesi](assets/images/screenshot-import.png)
+
+### Telefonda
+
+Dokuz sütunluk tablo dar ekranda **karta dönüşür**; sütun başlıkları her değerin soluna etiket olarak taşınır. Yatay kaydırma yoktur — bütün alanlar ilk bakışta görünür:
+
+<div align="center">
+
+<img src="assets/images/screenshot-mobile.png" alt="Mobil kart görünümü" width="330">
+
+</div>
 
 ---
 
@@ -98,11 +112,28 @@ mysql -u root -p < excel-import-export/cy_excel.sql
 
 Ardından: `http://localhost/excel-import-export/`
 
-Farklı bir veritabanı kullanacaksanız `system/config.php` içindeki `DB_*` satırlarını düzenleyin veya sunucunuzda `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS` ortam değişkenlerini tanımlayın.
+### Veritabanı bilgilerini nereye yazmalı?
 
-**Canlıya alırken:** `system/config.php` içindeki `APP_DEBUG` değerini `false` yapın.
+Üç yol vardır; uygulama hepsini şu **öncelik sırasıyla** okur:
 
-**Gereksinimler:** PHP 8.1+ (`zip`, `xml`, `mbstring`, `gd` eklentileri) · MySQL 5.7+ / MariaDB 10.3+
+| Öncelik | Yer | Ne zaman |
+|---------|-----|----------|
+| 1 | `system/config.local.php` | **Önerilen.** Depoya girmez, canlıya alma işlemi silmez |
+| 2 | Ortam değişkenleri (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) | Docker / CI / platform tabanlı barındırma |
+| 3 | `system/config.php` içindeki varsayılanlar | Yalnızca yerel XAMPP denemesi (root / boş şifre) |
+
+Önerilen yol iki adımdır:
+
+```bash
+cp system/config.local.php.example system/config.local.php
+# ardından kopyadaki dört DB_* satırını doldurun
+```
+
+`config.local.php` `.gitignore` içindedir: parolanız asla depoya gitmez. `system/.htaccess` de o dosyanın tarayıcıdan istenmesini engeller — PHP yorumlayıcısı bir gün devre dışı kalırsa dosya düz metin olarak servis edilmesin diye.
+
+**Canlıya alırken:** `APP_DEBUG` değerini `false` yapın. `config.local.php` içine `define('APP_DEBUG', false);` yazmanız yeterlidir; `config.php` dosyasına dokunmanız gerekmez.
+
+**Gereksinimler:** PHP 8.1+ (`zip`, `xml`, `mbstring`, `gd` eklentileri) · MySQL 5.7+ / MariaDB 10.3+ · Modern bir tarayıcı (CSS `:has`, `env()` ve `flex` kullanılır)
 
 ---
 
@@ -110,26 +141,29 @@ Farklı bir veritabanı kullanacaksanız `system/config.php` içindeki `DB_*` sa
 
 ```
 excel-import-export/
-├── index.php                   ← Sayfa iskeleti (258 satır)
-├── cy_excel.sql                ← Veritabanı kurulumu (cy_excel şeması + 50 örnek kayıt)
+├── index.php                        ← Sayfa iskeleti
+├── cy_excel.sql                     ← Veritabanı kurulumu (cy_excel şeması + 50 örnek kayıt)
 ├── system/
-│   ├── config.php              ← Ayarlar + PDO bağlantısı + oturum
-│   ├── function.php            ← Yardımcılar, doğrulayıcılar, SÜTUN TANIMLARI
-│   ├── ajax.php                ← JSON uç noktası (CRUD + önizleme + kaydet)
-│   ├── export.php              ← Dosya indiren uç nokta
-│   ├── views/                  ← Modal pencereler (parça şablonlar)
-│   │   ├── modal-user.php      ← Ekleme / düzenleme formu
-│   │   ├── modal-detail.php    ← Kayıt detayı
-│   │   ├── modal-delete.php    ← Silme onayı
-│   │   └── modal-import.php    ← İçe aktarma sihirbazı
+│   ├── .htaccess                    ← BEYAZ LİSTE: yalnızca ajax.php ve export.php dışarı açık
+│   ├── config.php                   ← Ayarlar + PDO bağlantısı + oturum + APP_VERSION
+│   ├── config.local.php.example     ← Kopyalanacak şablon (parola buraya YAZILMAZ)
+│   ├── function.php                 ← Yardımcılar, doğrulayıcılar, SÜTUN TANIMLARI
+│   ├── ajax.php                     ← JSON uç noktası (CRUD + önizleme + kaydet)
+│   ├── export.php                   ← Dosya indiren uç nokta
+│   ├── views/                       ← Modal pencereler (parça şablonlar)
+│   │   ├── .htaccess                ← Doğrudan çağrıyı engeller
+│   │   ├── modal-user.php           ← Ekleme / düzenleme formu
+│   │   ├── modal-detail.php         ← Kayıt detayı
+│   │   ├── modal-delete.php         ← Silme onayı
+│   │   └── modal-import.php         ← İçe aktarma sihirbazı
 │   └── Excel/
-│       ├── XlsxWriter.php      ← ZipArchive ile .xlsx üretir
-│       └── XlsxReader.php      ← XMLReader ile .xlsx okur
+│       ├── XlsxWriter.php           ← ZipArchive ile .xlsx üretir
+│       └── XlsxReader.php           ← XMLReader ile .xlsx okur
 ├── assets/
-│   ├── css/cilginyazilim.css   ← Marka tasarım kalıbı (ortak)
-│   ├── css/style.css           ← Yalnızca bu sayfaya özel stiller
-│   └── js/app.js               ← Tüm arayüz davranışı
-└── upload/                     ← Profil görselleri (.htaccess ile korumalı)
+│   ├── css/cilginyazilim.css        ← Marka tasarım kalıbı (ortak, koyu tema dahil)
+│   ├── css/style.css                ← Bu sayfaya özel stiller + MOBİL DÜZEN
+│   └── js/app.js                    ← Tüm arayüz davranışı + tema anahtarı
+└── upload/                          ← Profil görselleri (.htaccess ile korumalı)
 ```
 
 ### Öne çıkan fonksiyonlar
@@ -343,6 +377,101 @@ Paket açılmadan önce arşivin bildirdiği toplam açılmış boyuta bakılır
 
 ---
 
+## Mobil düzen — tabloyu karta çevirmek
+
+Dokuz sütunluk bir tablo 360 piksellik bir telefona sığmaz. Yaygın çözüm `overflow-x: auto` ile yatay kaydırmadır; bu depoda da bir süre öyleydi ve **iki somut sorun** üretti:
+
+1. Ekrana yalnızca `#` ve `Foto` sütunları sığdığı için asıl veriyi (e-posta, maaş) görmek her satırda sağa kaydırıp geri gelmeyi gerektiriyordu.
+2. **Karşılaştırma imkânsızdı:** iki kaydın maaşını aynı anda göremiyordunuz — oysa bir listeye bakmanın sebebi tam olarak budur.
+
+Şimdi `767.98px` altında her `<tr>` bir **karta** dönüşür:
+
+```
+┌──────────────────────────────────────┐
+│ [A]  Ayşe  ŞAHİN                 #61 │
+│ ──────────────────────────────────── │
+│ E-POSTA    ayse.sahin@ornek.com      │
+│ DEPARTMAN  Pazarlama                 │
+│ MAAŞ       55.300,00                 │
+│ BAŞLAMA    06.09.2021                │
+│ ──────────────────────────────────── │
+│  [ 👁 ]      [ ✎ ]       [ 🗑 ]      │
+└──────────────────────────────────────┘
+```
+
+### Etiketler nereden geliyor?
+
+`<thead>` gizlendiğinde "Pazarlama" değerinin hangi sütuna ait olduğu kaybolur. CSS bunu her hücrenin soluna `data-label` değerini yazarak geri getirir:
+
+```css
+#user_data td::before {
+    content: attr(data-label);
+    width: 6.5rem;          /* sabit genişlik → değerler alt alta hizalanır */
+}
+```
+
+`data-label` özniteliğini `app.js` içindeki `rowCallback` yerleştirir ve etiketleri **`<thead>`'den okur**:
+
+```js
+var COLUMN_LABELS = $('#user_data thead th').map(function () {
+    return $(this).text().trim();
+}).get();
+```
+
+Etiketler CSS'e elle yazılsaydı sütun listesi iki yerde dururdu; biri güncellenip diğeri unutulduğunda **mobil kullanıcı yanlış etiketi okurdu** ve hatanın masaüstünde hiçbir izi olmazdı. Bu haliyle `excel_columns()` → `<thead>` → mobil etiket zinciri tek kaynaktan beslenir.
+
+### Neden DataTables'ın `responsive` eklentisi değil?
+
+Eklenti ~40 KB JS/CSS getirir ve satırları açılır-kapanır hale sokar: veriyi görmek için yine bir dokunuş gerekir. Buradaki çözüm **hiçbir kütüphane eklemez** ve tüm alanlar ilk bakışta görünür — projenin "sıfır bağımlılık" duruşuyla da tutarlıdır.
+
+### Gizli bir tuzak: satır içi genişlik
+
+DataTables kurulumdan sonra tabloyu ölçer ve genişliğini `<table style="width: 1148px">` gibi **satır içi** bir stil olarak yazar. Satır içi stil, harici dosyadaki her kuralı yener; bu yüzden kart düzeni ilk denemede ekranın dışına taşıyordu. Çözüm dar ekranla sınırlı tutulur:
+
+```css
+@media (max-width: 767.98px) {
+    #user_data { width: 100% !important; min-width: 0 !important; }
+}
+```
+
+DataTables'ta `autoWidth: false` demek de işe yarardı, ama o ayar **masaüstü** tablosunun sütun genişliklerini de bozar. Sorun yalnızca dar ekranda olduğu için çözüm de yalnızca orada durur.
+
+### Mobilde düzeltilen diğer noktalar
+
+| Sorun | Çözüm |
+|-------|-------|
+| Araç çubuğu yatay kayıyor, **"İçe Aktar" düğmesi görünmüyordu** | İki satır: arama üstte tam genişlikte, üç düğme altta eşit paylı |
+| 34 pikselik işlem ikonları parmakla ıskalanıyordu | Kart altında tam genişlik, **44 px** yükseklik (dokunma hedefi alt sınırı) |
+| Modal ekranın ortasında sıkışıyor, kenarlarda kullanılamaz boşluk kalıyordu | `modal-fullscreen-sm-down` (içe aktarma sihirbazında `md-down`) |
+| Modal butonları yan yana, "İptal" ile "Kaydet" birbirine çok yakındı | Alt alta ve tam genişlikte; **birincil eylem üstte** (`column-reverse`) |
+| iOS Safari form alanına dokununca sayfayı büyütüp geri küçültmüyordu | Alanlarda `font-size: 16px` — bu davranışı kapatan tek anahtar |
+| Bildirimler sağ üstte, tek elle ulaşılamayan köşede çıkıyordu | Ekranın altında, tam genişlikte, `env(safe-area-inset-bottom)` dolgusuyla |
+| Sabit arka plan katmanı iOS'ta kaydırmayı takıyordu | Mobilde `background-attachment: scroll` |
+| Telefon yan çevrilince modal ekranı taşırıyordu | `@media (orientation: landscape)` → gövde kendi içinde kayar |
+
+---
+
+## Koyu tema
+
+Marka kalıbı (`cilginyazilim.css`) iki kaynağa birden bakar:
+
+```css
+@media (prefers-color-scheme: dark) { :root:not([data-cy-theme="light"]) { … } }
+:root[data-cy-theme="dark"] { … }
+```
+
+Başlıktaki 🌙 / ☀ düğmesi **yalnızca `data-cy-theme` özniteliğini** değiştirir; tek bir renk değeri JavaScript'te tanımlı değildir. Üç durum vardır, iki değil:
+
+| Öznitelik | Sonuç |
+|-----------|-------|
+| yok (varsayılan) | Sistem tercihine uyar; telefon akşam koyuya geçtiğinde sayfa da geçer |
+| `data-cy-theme="dark"` | Her koşulda koyu |
+| `data-cy-theme="light"` | Her koşulda açık |
+
+Tercih `localStorage`'da saklanır ve **`<head>` içinde**, sayfa çizilmeden uygulanır. `app.js` sayfanın en altında yüklendiği için oraya konsaydı tarayıcı önce açık temayı çizer, sonra koyuya atlardı — kullanıcı her açılışta beyaz bir yanıp sönme görürdü. `localStorage` erişimi gizli sekmede istisna fırlattığı için okuma da yazma da `try/catch` içindedir.
+
+---
+
 ## Performans (ölçülen)
 
 | İşlem | Sonuç |
@@ -361,7 +490,7 @@ Varsayılan sınır 2.000 satırdır (`IMPORT_MAX_ROWS`). Sebebi: doğrulanmış
 
 | Ne | Nerede |
 |----|--------|
-| Veritabanı bilgileri | `system/config.php` → `DB_*` sabitleri (veya ortam değişkenleri) |
+| Veritabanı bilgileri | `system/config.local.php` (önerilen) veya ortam değişkenleri |
 | Yükleme boyut sınırları | `config.php` → `UPLOAD_MAX_BYTES`, `IMPORT_MAX_BYTES` |
 | Satır sınırı | `config.php` → `IMPORT_MAX_ROWS` |
 | İzin verilen görsel türleri | `config.php` → `ALLOWED_IMAGE_TYPES` |
@@ -370,6 +499,9 @@ Varsayılan sınır 2.000 satırdır (`IMPORT_MAX_ROWS`). Sebebi: doğrulanmış
 | Başlık eş anlamlıları | `function.php` → `excel_header_aliases()` |
 | Excel renkleri / stilleri | `XlsxWriter.php` → `stylesXml()` |
 | Sayfaya özel görünüm | `assets/css/style.css` |
+| Mobil kırılma noktası | `style.css` → `@media (max-width: 767.98px)` |
+| Marka renkleri / koyu tema paleti | `cilginyazilim.css` → `:root` ve `[data-cy-theme]` blokları |
+| Sürüm numarası | `config.php` → `APP_VERSION` (kart altbilgisinde görünür) |
 
 > **`assets/css/cilginyazilim.css` dosyasına dokunmayın.** O, projeler arası ortak marka tasarım kalıbıdır; sayfaya özel her şey `style.css` içine yazılır.
 
@@ -386,6 +518,25 @@ Varsayılan sınır 2.000 satırdır (`IMPORT_MAX_ROWS`). Sebebi: doğrulanmış
 
 ---
 
+## Sürüm notları
+
+### v1.1.0
+
+- **Mobil kart görünümü** — dokuz sütunluk tablo dar ekranda karta dönüşür; yatay kaydırma kalktı, sütun etiketleri `<thead>`'den otomatik üretilir.
+- **Koyu tema anahtarı** — sistem tercihine uyar, kullanıcı seçimi `localStorage`'da kalıcıdır, sayfa açılışında yanıp sönme yoktur.
+- **Dokunma hedefleri 44 px'e çıkarıldı**; modal'lar dar ekranda tam ekran açılır, butonlar alt alta ve tam genişliktedir.
+- **iOS otomatik yakınlaştırma kapatıldı** (form alanlarında `font-size: 16px`).
+- **Bildirimler ekranın altına alındı** ve güvenli alan (`safe-area-inset`) dolgusu eklendi.
+- **`config.local.php` artık gerçekten okunuyor** — dosya depoda bir şablon olarak duruyordu ama `config.php` onu hiç dahil etmiyordu; parolasını oraya yazan herkes sessizce varsayılan bağlantı bilgileriyle çalışıyordu.
+- `APP_DEBUG` ortam değişkeninden veya `config.local.php` içinden ayarlanabilir; `APP_VERSION` sabiti eklendi ve kart altbilgisinde gösteriliyor.
+- `.gitignore` deseni `system/config.local.*` olarak genişletildi: yanına konan her kopya varsayılan olarak gizli kalır.
+
+### v1.0.0
+
+- Sıfır bağımlılıklı `.xlsx` okuma/yazma, önizlemeli içe aktarma, sunucu taraflı DataTables, güvenlik katmanları.
+
+---
+
 ## Lisans
 
 MIT — dilediğiniz gibi indirip kullanabilirsiniz.
@@ -393,3 +544,16 @@ Telif: **Çılgın Yazılım** ([cilginyazilim.com](https://cilginyazilim.com))
 
 Katkı için depoyu çatallayın ve pull request gönderin:
 [github.com/CilginYazilim/excel-import-export](https://github.com/CilginYazilim/excel-import-export)
+
+---
+
+<div align="center">
+
+### Daha fazla örnek kod
+
+**[📚 cilginyazilim.com/kutuphane](https://cilginyazilim.com/kutuphane)**
+
+Bu örneğin adım adım anlatımı:
+**[Excel İçe / Dışa Aktarma](https://cilginyazilim.com/kutuphane/excel-ice-disa-aktarma)**
+
+</div>

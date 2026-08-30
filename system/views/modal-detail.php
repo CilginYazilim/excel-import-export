@@ -23,7 +23,7 @@ if (!defined("CY_APP")) {
 }
 ?>
 <div class="modal fade cy-modal" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
         <div class="modal-content">
 
             <div class="modal-header">

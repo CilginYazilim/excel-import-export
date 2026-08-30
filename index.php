@@ -92,7 +92,23 @@ $jsConfig = [
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--
+        viewport-fit=cover : Çentikli/yuvarlak köşeli telefonlarda sayfanın
+        ekranın tamamını kullanmasını sağlar. Yanına env(safe-area-inset-*)
+        dolgusu koymadan kullanılırsa içerik çentiğin altında kalır; bu
+        yüzden style.css içindeki mobil bloğunda alt/yan güvenli alan
+        dolguları da tanımlıdır.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <!--
+        theme-color : Mobil tarayıcının adres çubuğunu sayfanın rengine
+        boyar. İki değer veriyoruz; tarayıcı kullanıcının sistem temasına
+        uyanı seçer. Tek değer verilseydi koyu temada beyaz bir şerit
+        kalırdı.
+    -->
+    <meta name="theme-color" content="#0b5cb5" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#061321" media="(prefers-color-scheme: dark)">
     <meta name="author" content="Çılgın Yazılım - cilginyazilim.com">
     <meta name="description" content="PHP ile bağımlılıksız Excel (.xlsx) dışa ve içe aktarma: önizlemeli, doğrulamalı toplu veri yükleme örneği.">
 
@@ -122,6 +138,28 @@ $jsConfig = [
         zorlar. Elle sürüm numarası yazıp unutmaktan daha güvenlidir.
     -->
     <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
+
+    <!--
+        TEMA TERCİHİNİ ERKEN UYGULA (FOUC önleyici)
+        ------------------------------------------------------------
+        Bu üç satır BİLİNÇLİ olarak app.js'e taşınmadı. app.js sayfanın
+        en altında yüklenir; oraya konsaydı tarayıcı önce AÇIK temayı
+        çizer, saniyenin bir kısmı sonra KOYU temaya geçerdi — kullanıcı
+        her sayfa açılışında beyaz bir yanıp sönme görürdü. Buradaki kod
+        <body> çizilmeden çalıştığı için o yanıp sönme hiç oluşmaz.
+
+        try/catch: gizli sekmede veya site verileri engellendiğinde
+        localStorage'a ERİŞMEK bile istisna fırlatır; yakalamazsak
+        sayfanın geri kalanındaki hiçbir betik çalışmaz.
+    -->
+    <script>
+        try {
+            var cyTheme = localStorage.getItem('cy-theme');
+            if (cyTheme === 'dark' || cyTheme === 'light') {
+                document.documentElement.setAttribute('data-cy-theme', cyTheme);
+            }
+        } catch (e) {}
+    </script>
 </head>
 
 <body class="cy-app">
@@ -148,10 +186,29 @@ $jsConfig = [
                         </div>
                     </a>
 
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="cy-header-actions">
                         <span class="cy-badge cy-badge--glass">
                             Toplam <strong id="total_records">0</strong> kayıt
                         </span>
+
+                        <!--
+                            TEMA ANAHTARI
+                            Marka kalıbı (cilginyazilim.css) koyu temayı zaten
+                            biliyor: hem prefers-color-scheme'e uyar hem de
+                            <html data-cy-theme="..."> özniteliğine bakar. Bu
+                            buton yalnızca o özniteliği değiştirir; tek bir
+                            renk kuralı burada tanımlı değildir.
+
+                            aria-pressed'i JavaScript günceller: butonun
+                            "basılı" durumu koyu temayı temsil eder ve ekran
+                            okuyucu bunu sesli söyler.
+                        -->
+                        <button type="button" id="theme_toggle"
+                                class="btn cy-btn cy-btn--glass cy-theme-toggle"
+                                aria-pressed="false" title="Koyu / açık tema">
+                            <span class="cy-theme-toggle__icon" aria-hidden="true">🌙</span>
+                            <span class="cy-theme-toggle__text">Koyu</span>
+                        </button>
 
                         <!--
                             Excel butonları burada DEĞİL, tablonun üstündeki araç
@@ -160,7 +217,7 @@ $jsConfig = [
                             kullanır. Arama kutusuyla aynı satırda durmaları bu bağı
                             görünür kılar.
                         -->
-                        <button type="button" id="add_button" class="btn cy-btn cy-btn--onbrand">
+                        <button type="button" id="add_button" class="btn cy-btn cy-btn--onbrand cy-btn--add">
                             <span aria-hidden="true">＋</span> Yeni Kayıt
                         </button>
                     </div>
@@ -229,21 +286,40 @@ $jsConfig = [
                 -->
             </div>
 
-            <div class="cy-card__footer d-flex flex-wrap justify-content-between gap-2">
+            <div class="cy-card__footer cy-card__footer--split">
                 <span>Sunucu taraflı DataTables &middot; CSRF korumalı AJAX &middot; Sıfır bağımlılıklı .xlsx</span>
-                <span>PHP <?= e(PHP_VERSION) ?></span>
+                <span class="cy-nowrap">v<?= e(APP_VERSION) ?> &middot; PHP <?= e(PHP_VERSION) ?></span>
             </div>
         </div>
 
         <div class="cy-footer-note mt-4">
-            <p class="mb-1">
+            <p class="mb-2">
                 Bu açık kaynak örnek, <a href="https://cilginyazilim.com" target="_blank" rel="noopener">cilginyazilim.com</a>
                 tarafından geliştirilmiştir. MIT lisanslıdır; dilediğiniz gibi indirip kullanabilirsiniz.
             </p>
-            <p class="mb-0">
-                Kaynak kod:
-                <a href="https://github.com/CilginYazilim/excel-import-export"
-                   target="_blank" rel="noopener">github.com/CilginYazilim/excel-import-export</a>
+
+            <!--
+                ALTBİLGİ BAĞLANTILARI
+                Üç bağlantı da "bu koddan sonra nereye gidilir" sorusunu
+                yanıtlar: kütüphane (başka örnekler), depo (bu örneğin
+                kaynağı), sürüm notları (bu örnekte ne değişti).
+
+                Mobilde alt alta dizilir ve aralarındaki ayraç gizlenir;
+                dar ekranda "·" karakterinin satır başına düşmesi
+                bağlantıları kopuk gösteriyordu.
+            -->
+            <p class="cy-footer-links mb-0">
+                <a href="https://cilginyazilim.com/kutuphane" target="_blank" rel="noopener">
+                    📚 Örnek Kod Kütüphanesi
+                </a>
+                <span class="cy-footer-links__sep" aria-hidden="true">&middot;</span>
+                <a href="https://github.com/CilginYazilim/excel-import-export" target="_blank" rel="noopener">
+                    💻 GitHub Deposu
+                </a>
+                <span class="cy-footer-links__sep" aria-hidden="true">&middot;</span>
+                <a href="https://cilginyazilim.com/kutuphane/excel-ice-disa-aktarma" target="_blank" rel="noopener">
+                    📘 Anlatım Sayfası
+                </a>
             </p>
         </div>
     </div>
