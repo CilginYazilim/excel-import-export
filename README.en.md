@@ -15,13 +15,32 @@ Mobile-first card layout · Dark theme
 📚 **[Code library](https://cilginyazilim.com/kutuphane)** ·
 📘 **[Walkthrough for this example](https://cilginyazilim.com/kutuphane/excel-ice-disa-aktarma)**
 
+
+[**▶ Live Demo**](https://cilginyazilim.com/kutuphane/uygulama/excel-import-export/) · [Source Library](https://cilginyazilim.com/kutuphane/excel-ice-disa-aktarma) · [cilginyazilim.com](https://cilginyazilim.com)
+
 </div>
 
 <div align="center">
 
-![Application screenshot](assets/images/screenshot.png)
+## Live Demo
+
+**No setup, no sign-up, no download — try it in your browser in 3 seconds.**
+
+<a href="https://cilginyazilim.com/kutuphane/uygulama/excel-import-export/"><img src="https://img.shields.io/badge/OPEN_LIVE_DEMO-0b5cb5?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=061321" alt="Open Live Demo" height="42"></a>
+<a href="https://cilginyazilim.com/kutuphane/excel-ice-disa-aktarma"><img src="https://img.shields.io/badge/BROWSE_SOURCE-0ea5e9?style=for-the-badge&logo=readthedocs&logoColor=white&labelColor=061321" alt="Browse Source" height="42"></a>
+<a href="https://github.com/CilginYazilim/excel-import-export/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/DOWNLOAD_ZIP-16a34a?style=for-the-badge&logo=github&logoColor=white&labelColor=061321" alt="Download ZIP" height="42"></a>
+
+<br><br>
+
+<a href="https://cilginyazilim.com/kutuphane/uygulama/excel-import-export/" title="Click to open the live demo">
+  <img src="assets/images/screenshot.png" alt="Excel import/export live demo preview" width="860">
+</a>
+
+<sub>▲ Click the image to open the demo</sub>
 
 </div>
+
+> **Download a real .xlsx, edit it, upload it back — with no Composer and no PhpSpreadsheet.**
 
 ---
 
@@ -134,6 +153,45 @@ cp system/config.local.php.example system/config.local.php
 **Before going live:** set `APP_DEBUG` to `false`. Adding `define('APP_DEBUG', false);` to `config.local.php` is enough; you never need to touch `config.php`.
 
 **Requirements:** PHP 8.1+ (`zip`, `xml`, `mbstring`, `gd`) · MySQL 5.7+ / MariaDB 10.3+ · A modern browser (uses CSS `env()` and flexbox)
+
+### Environment variables
+
+Put them in a **`.env`** file at the repository root and never touch
+`system/config.php`:
+
+```bash
+cp .env.example .env        # Windows: copy .env.example .env
+```
+
+`.env` is in `.gitignore`: it never reaches the repository and a deploy
+does **not** delete it. `system/config.php`, by contrast, lives in the
+repository and is replaced by the repository's copy on every deploy — a
+password written there both ships to GitHub and disappears on the first
+deploy.
+
+The app runs without the file too; the defaults below match a local XAMPP
+install.
+
+**Lookup order:** `.env` → the real environment variable (Apache `SetEnv`,
+systemd…) → the default shown here.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `DB_HOST` | `127.0.0.1` | Database server |
+| `DB_NAME` | `cy_excel` | Database name |
+| `DB_USER` | `root` | User |
+| `DB_PASS` | *(empty)* | Password — **never hard-code it** |
+| `APP_TIMEZONE` | `Europe/Istanbul` | PHP timezone |
+| `APP_DEBUG` | *from environment* | Whether errors are printed to the page |
+
+**Why `APP_TIMEZONE`?** The `date.timezone` in XAMPP's `php.ini` can
+differ from the system timezone MySQL uses. On the test machine PHP was
+`Europe/Berlin` while MySQL was `Europe/Istanbul`, so two lines describing
+the same instant were an hour apart. The time **arithmetic** is done in
+SQL and was always correct — what drifted was the clock PHP printed. The
+timezone is now pinned explicitly; if your server is in another region,
+set this variable instead of touching the code.
+
 
 ---
 
