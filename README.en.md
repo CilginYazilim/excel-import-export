@@ -129,19 +129,33 @@ git clone https://github.com/CilginYazilim/excel-import-export.git
 mysql -u root -p < excel-import-export/cy_excel.sql
 ```
 
+> **Optional — your own database credentials:** run
+> `cp .env.example .env` (Windows: `copy .env.example .env`) and fill in the
+> `DB_*` lines. It runs without the file too; the defaults match a local XAMPP
+> install (`root`, empty password). `.env` is in `.gitignore`, so your password
+> never reaches the repository.
+
 Then open: `http://localhost/excel-import-export/`
 
 ### Where do the database credentials go?
 
-There are three options; the application reads them in this **order of precedence**:
+There are four options; the application reads them in this **order of precedence**:
 
 | Priority | Location | When |
 |----------|----------|------|
-| 1 | `system/config.local.php` | **Recommended.** Never committed, never wiped by a deploy |
-| 2 | Environment variables (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) | Docker / CI / platform hosting |
-| 3 | Defaults in `system/config.php` | Local XAMPP trial only (root / empty password) |
+| 1 | `system/config.local.php` | Never committed, never wiped by a deploy |
+| 2 | `.env` at the repository root | **Shortest route.** Same protection, one line to set up |
+| 3 | Environment variables (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) | Docker / CI / platform hosting |
+| 4 | Defaults in `system/config.php` | Local XAMPP trial only (root / empty password) |
 
-The recommended path is two steps:
+The shortest route is one step:
+
+```bash
+cp .env.example .env        # Windows: copy .env.example .env
+# then fill in the DB_* lines in the copy
+```
+
+If you prefer the `config.local.php` route:
 
 ```bash
 cp system/config.local.php.example system/config.local.php
@@ -200,6 +214,7 @@ set this variable instead of touching the code.
 ```
 excel-import-export/
 ├── index.php                        ← Page skeleton
+├── .env.example                     ← Database credentials (optional) — in .gitignore
 ├── cy_excel.sql                     ← Database setup (cy_excel schema + 50 sample rows)
 ├── system/
 │   ├── .htaccess                    ← ALLOWLIST: only ajax.php and export.php are reachable

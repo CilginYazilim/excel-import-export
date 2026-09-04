@@ -129,19 +129,33 @@ git clone https://github.com/CilginYazilim/excel-import-export.git
 mysql -u root -p < excel-import-export/cy_excel.sql
 ```
 
+> **İsteğe bağlı — kendi veritabanı bilgileriniz:**
+> `cp .env.example .env` (Windows: `copy .env.example .env`) deyip `DB_*`
+> satırlarını doldurun. Bu dosya olmadan da çalışır; varsayılanlar yerel bir
+> XAMPP kurulumuna (`root`, boş parola) göredir. `.env` `.gitignore`
+> içindedir — parolanız depoya gitmez.
+
 Ardından: `http://localhost/excel-import-export/`
 
 ### Veritabanı bilgilerini nereye yazmalı?
 
-Üç yol vardır; uygulama hepsini şu **öncelik sırasıyla** okur:
+Dört yol vardır; uygulama hepsini şu **öncelik sırasıyla** okur:
 
 | Öncelik | Yer | Ne zaman |
 |---------|-----|----------|
-| 1 | `system/config.local.php` | **Önerilen.** Depoya girmez, canlıya alma işlemi silmez |
-| 2 | Ortam değişkenleri (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) | Docker / CI / platform tabanlı barındırma |
-| 3 | `system/config.php` içindeki varsayılanlar | Yalnızca yerel XAMPP denemesi (root / boş şifre) |
+| 1 | `system/config.local.php` | Depoya girmez, canlıya alma işlemi silmez |
+| 2 | Depo kökündeki `.env` | **En kısa yol.** Aynı korumaya sahiptir, tek satırda kurulur |
+| 3 | Ortam değişkenleri (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`) | Docker / CI / platform tabanlı barındırma |
+| 4 | `system/config.php` içindeki varsayılanlar | Yalnızca yerel XAMPP denemesi (root / boş şifre) |
 
-Önerilen yol iki adımdır:
+En kısa yol tek adımdır:
+
+```bash
+cp .env.example .env        # Windows: copy .env.example .env
+# ardından kopyadaki DB_* satırlarını doldurun
+```
+
+`config.local.php` yolunu tercih ederseniz:
 
 ```bash
 cp system/config.local.php.example system/config.local.php
@@ -199,6 +213,7 @@ bir bölgedeyse bu değişkeni tanımlamanız yeterli, koda dokunmayın.
 ```
 excel-import-export/
 ├── index.php                        ← Sayfa iskeleti
+├── .env.example                     ← Veritabanı bilgileri (isteğe bağlı) — .gitignore içinde
 ├── cy_excel.sql                     ← Veritabanı kurulumu (cy_excel şeması + 50 örnek kayıt)
 ├── system/
 │   ├── .htaccess                    ← BEYAZ LİSTE: yalnızca ajax.php ve export.php dışarı açık
